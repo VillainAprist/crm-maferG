@@ -1,0 +1,28 @@
+# Root .gitignore for PROYECTO-TESIS-MAFERG
+
+# OS metadata
+.DS_Store
+Thumbs.db
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Node (in case package.json is added at root later)
+node_modules/
+npm-debug.log*
+
+# Compiled backend files
+crm-backend/target/
+crm-backend/.certs/
+
+# Compiled frontend files
+crm-frontend/node_modules/
+crm-frontend/dist/
+crm-frontend/dist-ssr/
+crm-frontend/*.local
