@@ -90,12 +90,71 @@ WHERE r.nombre_rol = 'OPERADOR'
 ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO producto (sku, nombre_prenda, categoria_infantil)
-VALUES ('SKU-SET-001', 'Conjunto Infantil Rayas', 'Conjuntos')
+VALUES 
+('SKU-SET-001', 'Conjunto Infantil Rayas', 'Conjuntos'),
+('SKU-VEST-002', 'Vestido Algodón Flores', 'Vestidos'),
+('SKU-PANT-003', 'Pantalón Jean Bebé', 'Pantalones')
 ON CONFLICT (sku) DO NOTHING;
 
 INSERT INTO lote_produccion (id_producto, id_usuario, codigo_lote, token_qr, fecha_confeccion)
 SELECT p.id_producto, u.id_usuario, 'LOTE-2026-024', '3fa85f64-5717-4562-b3fc-2c963f66afa6', now() - interval '20 day'
-FROM producto p
-JOIN usuario u ON u.username = 'operador.demo'
-WHERE p.sku = 'SKU-SET-001'
+FROM producto p JOIN usuario u ON u.username = 'operador.demo' WHERE p.sku = 'SKU-SET-001'
 ON CONFLICT (codigo_lote) DO NOTHING;
+
+INSERT INTO lote_produccion (id_producto, id_usuario, codigo_lote, token_qr, fecha_confeccion)
+SELECT p.id_producto, u.id_usuario, 'LOTE-2026-025', '8c983d5a-cf2a-43d9-95ab-5489fcd2db98', now() - interval '15 day'
+FROM producto p JOIN usuario u ON u.username = 'operador.demo' WHERE p.sku = 'SKU-VEST-002'
+ON CONFLICT (codigo_lote) DO NOTHING;
+
+INSERT INTO lote_produccion (id_producto, id_usuario, codigo_lote, token_qr, fecha_confeccion)
+SELECT p.id_producto, u.id_usuario, 'LOTE-2026-026', 'a76b8c9d-1234-5678-abcd-ef1234567890', now() - interval '5 day'
+FROM producto p JOIN usuario u ON u.username = 'operador.demo' WHERE p.sku = 'SKU-PANT-003'
+ON CONFLICT (codigo_lote) DO NOTHING;
+
+-- Seed de Clientes
+INSERT INTO cliente (tipo_cliente, nombre_razon_social, email, telefono, ciudad)
+VALUES 
+('B2C', 'María Pérez', 'maria.perez@example.com', '987654321', 'Lima'),
+('B2B', 'Boutique Hilos y Colores', 'contacto@hilosycolores.com', '014455667', 'Arequipa'),
+('B2C', 'Juan Gómez', 'juan.gomez@example.com', '912345678', 'Trujillo')
+ON CONFLICT (email) DO NOTHING;
+
+-- Seed de Evaluaciones NPS
+-- 1. Evaluacion promotora (10) para LOTE-2026-024
+INSERT INTO evaluacion_nps (id_cliente, id_lote, puntuacion, clasificacion, comentario_calidad, fecha_registro)
+SELECT c.id_cliente, l.id_lote, 10, 'PROMOTOR', 'Excelente calidad de tela y costuras, muy suave.', now() - interval '10 day'
+FROM cliente c, lote_produccion l
+WHERE c.email = 'maria.perez@example.com' AND l.codigo_lote = 'LOTE-2026-024'
+ON CONFLICT DO NOTHING;
+
+-- 2. Evaluacion detractora (4) para LOTE-2026-025 (debería detonar alerta)
+INSERT INTO evaluacion_nps (id_cliente, id_lote, puntuacion, clasificacion, comentario_calidad, fecha_registro)
+SELECT c.id_cliente, l.id_lote, 4, 'DETRACTOR', 'Llegó con un botón suelto y la costura del dobladillo deshilachada.', now() - interval '8 day'
+FROM cliente c, lote_produccion l
+WHERE c.email = 'contacto@hilosycolores.com' AND l.codigo_lote = 'LOTE-2026-025'
+ON CONFLICT DO NOTHING;
+
+-- 3. Evaluacion pasiva (8) para LOTE-2026-026
+INSERT INTO evaluacion_nps (id_cliente, id_lote, puntuacion, clasificacion, comentario_calidad, fecha_registro)
+SELECT c.id_cliente, l.id_lote, 8, 'PASIVO', 'Buen producto en general, pero tardó más de lo esperado.', now() - interval '2 day'
+FROM cliente c, lote_produccion l
+WHERE c.email = 'juan.gomez@example.com' AND l.codigo_lote = 'LOTE-2026-026'
+ON CONFLICT DO NOTHING;
+
+-- Seed de Alertas de Calidad
+-- Alerta pendiente para la evaluación detractora
+INSERT INTO alerta_calidad (id_evaluacion, estado, comentario_resolucion, fecha_disparo)
+SELECT e.id_evaluacion, 'PENDIENTE', NULL, now() - interval '8 day'
+FROM evaluacion_nps e
+JOIN cliente c ON e.id_cliente = c.id_cliente
+WHERE c.email = 'contacto@hilosycolores.com' AND e.puntuacion = 4
+ON CONFLICT DO NOTHING;
+
+-- Seed de Cupones de Fidelización
+-- Cupón generado para el cliente promotor
+INSERT INTO cupon_fidelizacion (id_evaluacion, codigo_hash, estado, fecha_generacion, fecha_expiracion)
+SELECT e.id_evaluacion, 'CUPON-MARIA-2026', 'DISPONIBLE', now() - interval '10 day', now() + interval '50 day'
+FROM evaluacion_nps e
+JOIN cliente c ON e.id_cliente = c.id_cliente
+WHERE c.email = 'maria.perez@example.com' AND e.puntuacion = 10
+ON CONFLICT DO NOTHING;
