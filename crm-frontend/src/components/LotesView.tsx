@@ -1,7 +1,4 @@
 import { useState } from 'react'
-import type { Lote, Producto } from '../types'
-import { API_BASE } from '../config'
-
 import type { Lote, Producto, Maquina } from '../types'
 import { API_BASE } from '../config'
 
