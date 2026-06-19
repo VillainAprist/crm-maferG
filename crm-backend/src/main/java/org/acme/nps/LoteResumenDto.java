@@ -7,5 +7,8 @@ public record LoteResumenDto(
     String categoriaInfantil,
     String fechaConfeccion,
     boolean yaRespondido,
-    int cantidad
+    int cantidad,
+    Long idMaquina,
+    String codigoMaquina,
+    String nombreMaquina
 ) {}

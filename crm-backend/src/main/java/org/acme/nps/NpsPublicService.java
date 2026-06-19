@@ -206,10 +206,15 @@ public class NpsPublicService {
             String categoriaInfantil = null;
             String fechaConfeccion = null;
             int cantidad = 1;
+            Long idMaquina = null;
+            String codigoMaquina = null;
+            String nombreMaquina = null;
 
-            String sql = "SELECT l.id_lote, l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, p.categoria_infantil " +
+            String sql = "SELECT l.id_lote, l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, p.categoria_infantil, " +
+                         "l.id_maquina, m.codigo_maquina, m.nombre_maquina " +
                          "FROM lote_produccion l " +
                          "JOIN producto p ON l.id_producto = p.id_producto " +
+                         "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
                          "WHERE l.token_qr = ?";
                          
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -224,6 +229,9 @@ public class NpsPublicService {
                         var confeccionTs = rs.getTimestamp("fecha_confeccion");
                         fechaConfeccion = confeccionTs != null ? confeccionTs.toInstant().toString().substring(0, 10) : "";
                         cantidad = rs.getInt("cantidad");
+                        idMaquina = rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null;
+                        codigoMaquina = rs.getString("codigo_maquina");
+                        nombreMaquina = rs.getString("nombre_maquina");
                     } else {
                         return null; // Token no encontrado
                     }
@@ -242,7 +250,7 @@ public class NpsPublicService {
                 }
             }
 
-            return new LoteResumenDto(codigoLote, nombrePrenda, sku, categoriaInfantil, fechaConfeccion, yaRespondido, cantidad);
+            return new LoteResumenDto(codigoLote, nombrePrenda, sku, categoriaInfantil, fechaConfeccion, yaRespondido, cantidad, idMaquina, codigoMaquina, nombreMaquina);
         } catch (Exception ex) {
             if (ex instanceof NpsException) {
                 throw (NpsException) ex;

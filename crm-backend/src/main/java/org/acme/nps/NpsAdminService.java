@@ -350,9 +350,11 @@ public class NpsAdminService {
 
     public List<LoteDto> obtenerLotes() {
         List<LoteDto> lotes = new ArrayList<>();
-        String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku " +
+        String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
+                     "l.id_maquina, m.codigo_maquina, m.nombre_maquina " +
                      "FROM lote_produccion l " +
                      "JOIN producto p ON l.id_producto = p.id_producto " +
+                     "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
                      "ORDER BY l.id_lote DESC";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
@@ -360,6 +362,11 @@ public class NpsAdminService {
             while (rs.next()) {
                 java.sql.Timestamp confeccionTs = rs.getTimestamp("fecha_confeccion");
                 String fecha = confeccionTs != null ? DATE_FORMATTER.format(confeccionTs.toInstant()) : "";
+                
+                Long idMaquina = rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null;
+                String codigoMaquina = rs.getString("codigo_maquina");
+                String nombreMaquina = rs.getString("nombre_maquina");
+                
                 lotes.add(new LoteDto(
                         rs.getLong("id_lote"),
                         rs.getString("codigo_lote"),
@@ -367,7 +374,10 @@ public class NpsAdminService {
                         fecha,
                         rs.getString("nombre_prenda"),
                         rs.getString("sku"),
-                        rs.getInt("cantidad")
+                        rs.getInt("cantidad"),
+                        idMaquina,
+                        codigoMaquina,
+                        nombreMaquina
                 ));
             }
         } catch (Exception e) {
@@ -409,13 +419,18 @@ public class NpsAdminService {
 
             // Insertar Lote
             long idLote;
-            String sqlInsert = "INSERT INTO lote_produccion (id_producto, id_usuario, codigo_lote, token_qr, fecha_confeccion, cantidad) VALUES (?, ?, ?, ?, now(), ?)";
+            String sqlInsert = "INSERT INTO lote_produccion (id_producto, id_usuario, id_maquina, codigo_lote, token_qr, fecha_confeccion, cantidad) VALUES (?, ?, ?, ?, ?, now(), ?)";
             try (PreparedStatement ps = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 ps.setLong(1, request.idProducto());
                 ps.setLong(2, idUsuario);
-                ps.setString(3, request.codigoLote().trim());
-                ps.setObject(4, tokenQr);
-                ps.setInt(5, request.cantidad() > 0 ? request.cantidad() : 1);
+                if (request.idMaquina() != null) {
+                    ps.setLong(3, request.idMaquina());
+                } else {
+                    ps.setNull(3, java.sql.Types.BIGINT);
+                }
+                ps.setString(4, request.codigoLote().trim());
+                ps.setObject(5, tokenQr);
+                ps.setInt(6, request.cantidad() > 0 ? request.cantidad() : 1);
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
@@ -427,9 +442,11 @@ public class NpsAdminService {
             }
 
             // Devolver Lote creado
-            String sqlSelect = "SELECT l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku " +
+            String sqlSelect = "SELECT l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
+                               "l.id_maquina, m.codigo_maquina, m.nombre_maquina " +
                                "FROM lote_produccion l " +
                                "JOIN producto p ON l.id_producto = p.id_producto " +
+                               "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
                                "WHERE l.id_lote = ?";
             try (PreparedStatement ps = conn.prepareStatement(sqlSelect)) {
                 ps.setLong(1, idLote);
@@ -437,6 +454,11 @@ public class NpsAdminService {
                     if (rs.next()) {
                         java.sql.Timestamp confeccionTs = rs.getTimestamp("fecha_confeccion");
                         String fecha = confeccionTs != null ? DATE_FORMATTER.format(confeccionTs.toInstant()) : "";
+                        
+                        Long idMaquina = rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null;
+                        String codigoMaquina = rs.getString("codigo_maquina");
+                        String nombreMaquina = rs.getString("nombre_maquina");
+                        
                         return new LoteDto(
                                 idLote,
                                 rs.getString("codigo_lote"),
@@ -444,7 +466,10 @@ public class NpsAdminService {
                                 fecha,
                                 rs.getString("nombre_prenda"),
                                 rs.getString("sku"),
-                                rs.getInt("cantidad")
+                                rs.getInt("cantidad"),
+                                idMaquina,
+                                codigoMaquina,
+                                nombreMaquina
                         );
                     } else {
                         throw new NpsException("Lote creado no encontrado.");
@@ -456,6 +481,56 @@ public class NpsAdminService {
                 throw new RuntimeException(e.getMessage(), e);
             }
             throw new RuntimeException("Error al registrar lote en base de datos: " + e.getMessage(), e);
+        }
+    }
+
+    public List<MaquinaDto> obtenerMaquinas() {
+        List<MaquinaDto> maquinas = new ArrayList<>();
+        String sql = "SELECT id_maquina, codigo_maquina, nombre_maquina, tipo_maquina, activo FROM maquina ORDER BY id_maquina DESC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                maquinas.add(new MaquinaDto(
+                        rs.getLong("id_maquina"),
+                        rs.getString("codigo_maquina"),
+                        rs.getString("nombre_maquina"),
+                        rs.getString("tipo_maquina"),
+                        rs.getBoolean("activo")
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar maquinas: " + e.getMessage(), e);
+        }
+        return maquinas;
+    }
+
+    @Transactional
+    public MaquinaDto registrarMaquina(MaquinaDto request) {
+        if (request.codigoMaquina() == null || request.codigoMaquina().isBlank()) {
+            throw new IllegalArgumentException("El código de máquina es obligatorio.");
+        }
+        if (request.nombreMaquina() == null || request.nombreMaquina().isBlank()) {
+            throw new IllegalArgumentException("El nombre de máquina es obligatorio.");
+        }
+        
+        String sql = "INSERT INTO maquina (codigo_maquina, nombre_maquina, tipo_maquina, activo) VALUES (?, ?, ?, ?) RETURNING id_maquina";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, request.codigoMaquina().trim().toUpperCase());
+            ps.setString(2, request.nombreMaquina().trim());
+            ps.setString(3, request.tipoMaquina() != null ? request.tipoMaquina().trim() : null);
+            ps.setBoolean(4, request.activo());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    long id = rs.getLong(1);
+                    return new MaquinaDto(id, request.codigoMaquina().trim().toUpperCase(), request.nombreMaquina().trim(), request.tipoMaquina(), request.activo());
+                } else {
+                    throw new NpsException("Error al generar ID para la máquina.");
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al registrar máquina: " + e.getMessage(), e);
         }
     }
 }

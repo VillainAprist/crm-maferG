@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import type { ResumenData, Alerta, Cupon, AdminTab, Lote, Producto, Evaluacion } from '../types'
+import type { ResumenData, Alerta, Cupon, AdminTab, Lote, Producto, Evaluacion, Maquina } from '../types'
 import { ResumenView } from './ResumenView'
 import { AlertasView } from './AlertasView'
 import { LotesView } from './LotesView'
+import { MaquinasView } from './MaquinasView'
 import { API_BASE } from '../config'
 
 export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean) => void }) {
   const [adminAuth, setAdminAuth] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState('')
+  const [userRole, setUserRole] = useState<'admin' | 'operador' | null>(null)
   
   const [adminTab, setAdminTab] = useState<AdminTab>('resumen')
   const [resumenData, setResumenData] = useState<ResumenData | null>(null)
@@ -16,22 +18,27 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
   const [cupones, setCupones] = useState<Cupon[]>([])
   const [lotes, setLotes] = useState<Lote[]>([])
   const [productos, setProductos] = useState<Producto[]>([])
+  const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([])
   
   const [loadingAdmin, setLoadingAdmin] = useState(false)
   const [alertasLoading, setAlertasLoading] = useState(false)
   const [lotesLoading, setLotesLoading] = useState(false)
+  const [maquinasLoading, setMaquinasLoading] = useState(false)
   const [evaluacionesLoading, setEvaluacionesLoading] = useState(false)
 
-  const tabs: { key: AdminTab; label: string }[] = [
+  const tabs: { key: AdminTab; label: string }[] = userRole === 'admin' ? [
     { key: 'resumen', label: 'Resumen' },
     { key: 'alertas', label: 'Alertas' },
     { key: 'lotes', label: 'Lotes y QRs' },
-  ]
+    { key: 'maquinas', label: 'Máquinas' },
+  ] : []
 
   function handleLogin() {
     if (pinInput === '1234') {
       setAdminAuth(true)
+      setUserRole('admin')
+      setAdminTab('resumen')
       setPinInput('')
       setPinError('')
       fetchResumen()
@@ -40,6 +47,16 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
       fetchCupones()
       fetchLotes()
       fetchProductos()
+      fetchMaquinas()
+    } else if (pinInput === '4321') {
+      setAdminAuth(true)
+      setUserRole('operador')
+      setAdminTab('lotes')
+      setPinInput('')
+      setPinError('')
+      fetchLotes()
+      fetchProductos()
+      fetchMaquinas()
     } else {
       setPinError('PIN incorrecto')
     }
@@ -48,6 +65,7 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
   function handleLogout() {
     setAdminAuth(false)
     setAdminMode(false)
+    setUserRole(null)
     setPinInput('')
     setPinError('')
     setResumenData(null)
@@ -55,7 +73,23 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
     setCupones([])
     setLotes([])
     setProductos([])
+    setMaquinas([])
     setEvaluaciones([])
+  }
+
+  async function fetchMaquinas() {
+    setMaquinasLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/maquinas`)
+      if (res.ok) {
+        const data = (await res.json()) as Maquina[]
+        setMaquinas(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setMaquinasLoading(false)
+    }
   }
 
   async function fetchResumen() {
@@ -172,6 +206,9 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
       fetchLotes()
       fetchProductos()
     }
+    if (tab === 'maquinas') {
+      fetchMaquinas()
+    }
   }
 
   if (!adminAuth) {
@@ -223,7 +260,9 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
     <div className="w-full max-w-4xl mx-auto animate-fadeIn">
       <header className="flex items-center justify-between mb-3">
         <div>
-          <h1 className="text-lg font-bold text-[#16342d]">Panel Admin</h1>
+          <h1 className="text-lg font-bold text-[#16342d]">
+            {userRole === 'admin' ? 'Panel Admin' : 'Panel Operario'}
+          </h1>
           <p className="text-sm text-[#4f6f66]">MAFER-G Intelligent Connect</p>
         </div>
         <button
@@ -234,24 +273,26 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
         </button>
       </header>
 
-      <div className="flex gap-2 mb-4 bg-white p-1.5 rounded-2xl border border-[#dce7e4] shadow-sm overflow-x-auto">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all whitespace-nowrap ${
-              adminTab === tab.key
-                ? 'bg-[#1e4a40] text-white shadow-md'
-                : 'text-[#53796f] hover:bg-[#f0f7f5]'
-            }`}
-            onClick={() => handleTabChange(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {userRole === 'admin' && (
+        <div className="flex gap-2 mb-4 bg-white p-1.5 rounded-2xl border border-[#dce7e4] shadow-sm overflow-x-auto">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all whitespace-nowrap ${
+                adminTab === tab.key
+                  ? 'bg-[#1e4a40] text-white shadow-md'
+                  : 'text-[#53796f] hover:bg-[#f0f7f5]'
+              }`}
+              onClick={() => handleTabChange(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="bg-white rounded-[24px] border border-[#dce7e4] shadow-sm p-6 min-h-[400px]">
-        {adminTab === 'resumen' && (
+        {adminTab === 'resumen' && userRole === 'admin' && (
           <ResumenView
             loadingAdmin={loadingAdmin}
             resumenData={resumenData}
@@ -263,13 +304,24 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
             fetchCupones={fetchCupones}
           />
         )}
-        {adminTab === 'alertas' && <AlertasView alertasLoading={alertasLoading} alertas={alertas} fetchAlertas={fetchAlertas} setAlertas={setAlertas} />}
+        {adminTab === 'alertas' && userRole === 'admin' && (
+          <AlertasView alertasLoading={alertasLoading} alertas={alertas} fetchAlertas={fetchAlertas} setAlertas={setAlertas} />
+        )}
         {adminTab === 'lotes' && (
           <LotesView 
             lotes={lotes} 
             productos={productos} 
+            maquinas={maquinas}
+            userRole={userRole}
             loading={lotesLoading} 
             fetchLotes={fetchLotes} 
+          />
+        )}
+        {adminTab === 'maquinas' && userRole === 'admin' && (
+          <MaquinasView
+            maquinas={maquinas}
+            loading={maquinasLoading}
+            fetchMaquinas={fetchMaquinas}
           />
         )}
       </div>

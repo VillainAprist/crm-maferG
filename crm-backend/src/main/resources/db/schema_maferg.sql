@@ -21,10 +21,19 @@ CREATE TABLE IF NOT EXISTS producto (
     categoria_infantil VARCHAR(120)
 );
 
+CREATE TABLE IF NOT EXISTS maquina (
+    id_maquina BIGSERIAL PRIMARY KEY,
+    codigo_maquina VARCHAR(80) NOT NULL UNIQUE,
+    nombre_maquina VARCHAR(150) NOT NULL,
+    tipo_maquina VARCHAR(100),
+    activo BOOLEAN NOT NULL DEFAULT TRUE
+);
+
 CREATE TABLE IF NOT EXISTS lote_produccion (
     id_lote BIGSERIAL PRIMARY KEY,
     id_producto BIGINT NOT NULL REFERENCES producto(id_producto),
     id_usuario BIGINT NOT NULL REFERENCES usuario(id_usuario),
+    id_maquina BIGINT REFERENCES maquina(id_maquina),
     codigo_lote VARCHAR(80) NOT NULL UNIQUE,
     token_qr UUID NOT NULL UNIQUE,
     fecha_confeccion TIMESTAMPTZ NOT NULL,
@@ -89,6 +98,14 @@ FROM rol r
 WHERE r.nombre_rol = 'OPERADOR'
 ON CONFLICT (username) DO NOTHING;
 
+-- Seed de Máquinas
+INSERT INTO maquina (codigo_maquina, nombre_maquina, tipo_maquina, activo)
+VALUES 
+('MAQ-REC-01', 'Recta Industrial Juki', 'Recta', TRUE),
+('MAQ-REM-02', 'Remalladora Brother', 'Remalladora', TRUE),
+('MAQ-COL-03', 'Recubridora/Collaretera Singer', 'Recubridora', TRUE)
+ON CONFLICT (codigo_maquina) DO NOTHING;
+
 INSERT INTO producto (sku, nombre_prenda, categoria_infantil)
 VALUES 
 ('SKU-SET-001', 'Conjunto Infantil Rayas', 'Conjuntos'),
@@ -96,19 +113,28 @@ VALUES
 ('SKU-PANT-003', 'Pantalón Jean Bebé', 'Pantalones')
 ON CONFLICT (sku) DO NOTHING;
 
-INSERT INTO lote_produccion (id_producto, id_usuario, codigo_lote, token_qr, fecha_confeccion)
-SELECT p.id_producto, u.id_usuario, 'LOTE-2026-024', '3fa85f64-5717-4562-b3fc-2c963f66afa6', now() - interval '20 day'
-FROM producto p JOIN usuario u ON u.username = 'operador.demo' WHERE p.sku = 'SKU-SET-001'
+INSERT INTO lote_produccion (id_producto, id_usuario, id_maquina, codigo_lote, token_qr, fecha_confeccion)
+SELECT p.id_producto, u.id_usuario, m.id_maquina, 'LOTE-2026-024', '3fa85f64-5717-4562-b3fc-2c963f66afa6', now() - interval '20 day'
+FROM producto p
+CROSS JOIN usuario u
+CROSS JOIN maquina m
+WHERE p.sku = 'SKU-SET-001' AND u.username = 'operador.demo' AND m.codigo_maquina = 'MAQ-REC-01'
 ON CONFLICT (codigo_lote) DO NOTHING;
 
-INSERT INTO lote_produccion (id_producto, id_usuario, codigo_lote, token_qr, fecha_confeccion)
-SELECT p.id_producto, u.id_usuario, 'LOTE-2026-025', '8c983d5a-cf2a-43d9-95ab-5489fcd2db98', now() - interval '15 day'
-FROM producto p JOIN usuario u ON u.username = 'operador.demo' WHERE p.sku = 'SKU-VEST-002'
+INSERT INTO lote_produccion (id_producto, id_usuario, id_maquina, codigo_lote, token_qr, fecha_confeccion)
+SELECT p.id_producto, u.id_usuario, m.id_maquina, 'LOTE-2026-025', '8c983d5a-cf2a-43d9-95ab-5489fcd2db98', now() - interval '15 day'
+FROM producto p
+CROSS JOIN usuario u
+CROSS JOIN maquina m
+WHERE p.sku = 'SKU-VEST-002' AND u.username = 'operador.demo' AND m.codigo_maquina = 'MAQ-REM-02'
 ON CONFLICT (codigo_lote) DO NOTHING;
 
-INSERT INTO lote_produccion (id_producto, id_usuario, codigo_lote, token_qr, fecha_confeccion)
-SELECT p.id_producto, u.id_usuario, 'LOTE-2026-026', 'a76b8c9d-1234-5678-abcd-ef1234567890', now() - interval '5 day'
-FROM producto p JOIN usuario u ON u.username = 'operador.demo' WHERE p.sku = 'SKU-PANT-003'
+INSERT INTO lote_produccion (id_producto, id_usuario, id_maquina, codigo_lote, token_qr, fecha_confeccion)
+SELECT p.id_producto, u.id_usuario, m.id_maquina, 'LOTE-2026-026', 'a76b8c9d-1234-5678-abcd-ef1234567890', now() - interval '5 day'
+FROM producto p
+CROSS JOIN usuario u
+CROSS JOIN maquina m
+WHERE p.sku = 'SKU-PANT-003' AND u.username = 'operador.demo' AND m.codigo_maquina = 'MAQ-COL-03'
 ON CONFLICT (codigo_lote) DO NOTHING;
 
 -- Seed de Clientes

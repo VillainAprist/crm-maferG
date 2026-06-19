@@ -2,17 +2,23 @@ import { useState } from 'react'
 import type { Lote, Producto } from '../types'
 import { API_BASE } from '../config'
 
+import type { Lote, Producto, Maquina } from '../types'
+import { API_BASE } from '../config'
+
 interface LotesViewProps {
   lotes: Lote[]
   productos: Producto[]
+  maquinas: Maquina[]
+  userRole?: string | null
   loading: boolean
   fetchLotes: () => Promise<void>
 }
 
-export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewProps) {
+export function LotesView({ lotes, productos, maquinas, userRole, loading, fetchLotes }: LotesViewProps) {
   const [codigoLote, setCodigoLote] = useState('')
   const [idProducto, setIdProducto] = useState<number | ''>('')
   const [cantidad, setCantidad] = useState<number | ''>(1)
+  const [idMaquina, setIdMaquina] = useState<number | ''>('')
   const [creando, setCreando] = useState(false)
   const [error, setError] = useState('')
   const [exito, setExito] = useState('')
@@ -62,7 +68,8 @@ export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewPr
         body: JSON.stringify({
           codigoLote: codigoLote.trim(),
           idProducto: Number(idProducto),
-          cantidad: Number(cantidad) || 1
+          cantidad: Number(cantidad) || 1,
+          idMaquina: idMaquina ? Number(idMaquina) : null
         })
       })
       
@@ -77,6 +84,7 @@ export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewPr
       setCodigoLote('')
       setIdProducto('')
       setCantidad(1)
+      setIdMaquina('')
       await fetchLotes()
     } catch {
       setError('Error de conexión con el servidor.')
@@ -85,7 +93,7 @@ export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewPr
     }
   }
 
-  function handlePrintQr(tokenQr: string, codigo: string, prenda: string, cant: number) {
+  function handlePrintQr(tokenQr: string, codigo: string, prenda: string, cant: number, maqName?: string | null) {
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
     printWindow.document.write(`
@@ -149,6 +157,7 @@ export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewPr
             <div class="info"><strong>Lote:</strong> ${codigo}</div>
             <div class="info"><strong>Prenda:</strong> ${prenda}</div>
             <div class="info"><strong>Cantidad:</strong> ${cant} uds.</div>
+            ${maqName ? `<div class="info"><strong>Máquina:</strong> ${maqName}</div>` : ''}
             <img src="${API_BASE}/api/nps/admin/etiqueta/${tokenQr}/qr" alt="QR Code" />
             <div class="footer-text">Escanea con tu celular para calificar este lote</div>
           </div>
@@ -175,15 +184,21 @@ export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewPr
   return (
     <div className="space-y-6 animate-fadeIn">
       <div>
-        <h2 className="text-lg font-bold text-[#173c34]">Gestión de Lotes y Códigos QR</h2>
-        <p className="text-sm text-[#4f6f66]">Registra lotes de producción para generar sus etiquetas QR de encuestas NPS.</p>
+        <h2 className="text-lg font-bold text-[#173c34]">
+          {userRole === 'operador' ? 'Módulo de Registro de Producción' : 'Gestión de Lotes y Códigos QR'}
+        </h2>
+        <p className="text-sm text-[#4f6f66]">
+          {userRole === 'operador' 
+            ? 'Registra las prendas confeccionadas, cantidad y máquina utilizada para generar su etiqueta QR de control.' 
+            : 'Registra lotes de producción para generar sus etiquetas QR de encuestas NPS.'}
+        </p>
       </div>
 
       {/* Formulario de Registro */}
       <form onSubmit={handleCrearLote} className="bg-[#f2faf7] border border-[#d6e5e2] rounded-2xl p-5 space-y-4">
         <h3 className="font-bold text-[#1c4a3f] text-sm">Registrar Nuevo Lote</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <label className="flex flex-col gap-1.5 text-left">
             <span className="text-xs font-semibold text-[#53796f]">Código de Lote</span>
             <input
@@ -224,6 +239,22 @@ export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewPr
               placeholder="Ej. 10"
               className="border border-[#d0ded9] rounded-xl px-3 py-2.5 text-sm text-[#16342d] bg-white focus:outline-2 focus:outline-[rgba(71,169,147,0.3)] transition-all"
             />
+          </label>
+
+          <label className="flex flex-col gap-1.5 text-left">
+            <span className="text-xs font-semibold text-[#53796f]">Máquina <span className="font-normal text-gray-400">(opcional)</span></span>
+            <select
+              value={idMaquina}
+              onChange={(e) => setIdMaquina(e.target.value !== '' ? Number(e.target.value) : '')}
+              className="border border-[#d0ded9] rounded-xl px-3 py-2.5 text-sm text-[#16342d] bg-white focus:outline-2 focus:outline-[rgba(71,169,147,0.3)] transition-all"
+            >
+              <option value="">Seleccione una máquina</option>
+              {maquinas.map((maq) => (
+                <option key={maq.idMaquina} value={maq.idMaquina}>
+                  {maq.nombreMaquina} ({maq.codigoMaquina})
+                </option>
+              ))}
+            </select>
           </label>
         </div>
 
@@ -323,13 +354,18 @@ export function LotesView({ lotes, productos, loading, fetchLotes }: LotesViewPr
                     <p className="text-xs text-[#53796f] mt-0.5">
                       SKU: <span className="font-mono">{lote.sku}</span> | Cantidad: <span className="font-bold text-[#14342e]">{lote.cantidad} uds.</span>
                     </p>
+                    {lote.nombreMaquina && (
+                      <p className="text-xs text-[#1c4a3f] font-semibold mt-0.5">
+                        ⚙️ Máquina: {lote.nombreMaquina} ({lote.codigoMaquina})
+                      </p>
+                    )}
                     <p className="text-[10px] text-gray-400 mt-1">Registrado: {lote.fechaConfeccion}</p>
                   </div>
 
                   {/* Actions */}
                   <div className="flex gap-2 mt-2 pt-2 border-t border-gray-50">
                     <button
-                      onClick={() => handlePrintQr(lote.tokenQr, lote.codigoLote, lote.nombrePrenda, lote.cantidad)}
+                      onClick={() => handlePrintQr(lote.tokenQr, lote.codigoLote, lote.nombrePrenda, lote.cantidad, lote.nombreMaquina)}
                       className="px-3 py-1.5 rounded-lg bg-[#e2ebe8] text-[#1c4a3f] text-xs font-bold hover:bg-[#d0ded9] transition-all cursor-pointer flex items-center gap-1"
                     >
                       🖨️ Imprimir

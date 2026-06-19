@@ -32,13 +32,34 @@ public class DatabaseInitializer {
             
             String sql = new String(is.readAllBytes(), StandardCharsets.UTF_8);
             try (Statement stmt = conn.createStatement()) {
-                stmt.execute(sql);
-                // Asegurar columna cantidad si la BD ya existía
+                // 1. Asegurar tabla maquina primero
+                try {
+                    stmt.execute("CREATE TABLE IF NOT EXISTS maquina (" +
+                                 "  id_maquina BIGSERIAL PRIMARY KEY, " +
+                                 "  codigo_maquina VARCHAR(80) NOT NULL UNIQUE, " +
+                                 "  nombre_maquina VARCHAR(150) NOT NULL, " +
+                                 "  tipo_maquina VARCHAR(100), " +
+                                 "  activo BOOLEAN NOT NULL DEFAULT TRUE" +
+                                 ")");
+                } catch (Exception ex) {
+                    LOG.warn("No se pudo asegurar la tabla maquina: " + ex.getMessage());
+                }
+
+                // 2. Asegurar columnas en lote_produccion si la BD ya existía
                 try {
                     stmt.execute("ALTER TABLE lote_produccion ADD COLUMN IF NOT EXISTS cantidad INT NOT NULL DEFAULT 1");
                 } catch (Exception ex) {
-                    LOG.warn("No se pudo agregar la columna cantidad a lote_produccion: " + ex.getMessage());
+                    LOG.warn("No se pudo asegurar la columna cantidad en lote_produccion: " + ex.getMessage());
                 }
+                
+                try {
+                    stmt.execute("ALTER TABLE lote_produccion ADD COLUMN IF NOT EXISTS id_maquina BIGINT REFERENCES maquina(id_maquina)");
+                } catch (Exception ex) {
+                    LOG.warn("No se pudo asegurar la columna id_maquina en lote_produccion: " + ex.getMessage());
+                }
+
+                // 3. Ejecutar esquema general (con seeds e índices)
+                stmt.execute(sql);
                 LOG.info("Database schema initialized/verified successfully.");
             }
         } catch (Exception e) {

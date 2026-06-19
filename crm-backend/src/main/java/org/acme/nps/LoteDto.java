@@ -7,5 +7,8 @@ public record LoteDto(
     String fechaConfeccion,
     String nombrePrenda,
     String sku,
-    int cantidad
+    int cantidad,
+    Long idMaquina,
+    String codigoMaquina,
+    String nombreMaquina
 ) {}

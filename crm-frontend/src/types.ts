@@ -60,7 +60,7 @@ export type ResumenData = {
   ultimosEventos: Evento[]
 }
 
-export type AdminTab = 'resumen' | 'alertas' | 'lotes'
+export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas'
 
 export type PantallaPublica = 'token-invalido' | 'bienvenida' | 'encuesta' | 'promotor' | 'detractor'
 
@@ -71,6 +71,14 @@ export type Producto = {
   categoriaInfantil: string
 }
 
+export type Maquina = {
+  idMaquina: number
+  codigoMaquina: string
+  nombreMaquina: string
+  tipoMaquina: string
+  activo: boolean
+}
+
 export type Lote = {
   idLote: number
   codigoLote: string
@@ -79,6 +87,9 @@ export type Lote = {
   nombrePrenda: string
   sku: string
   cantidad: number
+  idMaquina?: number | null
+  codigoMaquina?: string | null
+  nombreMaquina?: string | null
 }
 
 export type LoteResumen = {
@@ -89,4 +100,7 @@ export type LoteResumen = {
   fechaConfeccion: string
   yaRespondido: boolean
   cantidad: number
+  idMaquina?: number | null
+  codigoMaquina?: string | null
+  nombreMaquina?: string | null
 }

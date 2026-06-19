@@ -151,5 +151,24 @@ public class NpsAdminResource {
                     .build();
         }
     }
+
+    @GET
+    @Path("/maquinas")
+    public List<MaquinaDto> obtenerMaquinas() {
+        return npsAdminService.obtenerMaquinas();
+    }
+
+    @POST
+    @Path("/maquinas")
+    public Response registrarMaquina(MaquinaDto request) {
+        try {
+            MaquinaDto dto = npsAdminService.registrarMaquina(request);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
 }
 
