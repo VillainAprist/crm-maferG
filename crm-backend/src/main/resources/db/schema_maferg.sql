@@ -40,6 +40,15 @@ CREATE TABLE IF NOT EXISTS lote_produccion (
     cantidad INT NOT NULL DEFAULT 1
 );
 
+CREATE TABLE IF NOT EXISTS lote_proceso (
+    id_proceso BIGSERIAL PRIMARY KEY,
+    id_lote BIGINT NOT NULL REFERENCES lote_produccion(id_lote) ON DELETE CASCADE,
+    id_usuario BIGINT NOT NULL REFERENCES usuario(id_usuario),
+    id_maquina BIGINT REFERENCES maquina(id_maquina),
+    operacion VARCHAR(150) NOT NULL,
+    fecha_registro TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS cliente (
     id_cliente BIGSERIAL PRIMARY KEY,
     tipo_cliente VARCHAR(3) NOT NULL CHECK (tipo_cliente IN ('B2B', 'B2C')),
@@ -51,10 +60,20 @@ CREATE TABLE IF NOT EXISTS cliente (
     CONSTRAINT cliente_email_or_phone_chk CHECK (email IS NOT NULL OR telefono IS NOT NULL)
 );
 
+CREATE TABLE IF NOT EXISTS venta (
+    id_venta BIGSERIAL PRIMARY KEY,
+    id_lote BIGINT NOT NULL REFERENCES lote_produccion(id_lote) ON DELETE CASCADE,
+    id_cliente BIGINT NOT NULL REFERENCES cliente(id_cliente),
+    cantidad_vendida INT NOT NULL CHECK (cantidad_vendida > 0),
+    token_qr UUID NOT NULL UNIQUE,
+    fecha_venta TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS evaluacion_nps (
     id_evaluacion BIGSERIAL PRIMARY KEY,
     id_cliente BIGINT NOT NULL REFERENCES cliente(id_cliente),
     id_lote BIGINT NOT NULL REFERENCES lote_produccion(id_lote),
+    id_venta BIGINT REFERENCES venta(id_venta) ON DELETE SET NULL,
     puntuacion INT NOT NULL CHECK (puntuacion BETWEEN 0 AND 10),
     clasificacion VARCHAR(20) NOT NULL,
     comentario_calidad TEXT,
@@ -86,14 +105,46 @@ CREATE INDEX IF NOT EXISTS idx_evaluacion_lote ON evaluacion_nps(id_lote);
 CREATE INDEX IF NOT EXISTS idx_evaluacion_cliente ON evaluacion_nps(id_cliente);
 CREATE INDEX IF NOT EXISTS idx_alerta_estado ON alerta_calidad(estado);
 CREATE INDEX IF NOT EXISTS idx_cupon_estado ON cupon_fidelizacion(estado);
+CREATE INDEX IF NOT EXISTS idx_venta_token_qr ON venta(token_qr);
+CREATE INDEX IF NOT EXISTS idx_lote_proceso_lote ON lote_proceso(id_lote);
 
 -- Seed basico para pruebas
 INSERT INTO rol (nombre_rol)
-VALUES ('OPERADOR')
+VALUES ('OPERADOR'), ('ATENCION_CLIENTE'), ('ADMINISTRADOR')
 ON CONFLICT (nombre_rol) DO NOTHING;
 
 INSERT INTO usuario (id_rol, nombres, username, password_hash, activo)
 SELECT r.id_rol, 'Operador Demo', 'operador.demo', 'demo-hash', TRUE
+FROM rol r
+WHERE r.nombre_rol = 'OPERADOR'
+ON CONFLICT (username) DO NOTHING;
+
+INSERT INTO usuario (id_rol, nombres, username, password_hash, activo)
+SELECT r.id_rol, 'Soporte Demo', 'soporte.demo', 'soporte-hash', TRUE
+FROM rol r
+WHERE r.nombre_rol = 'ATENCION_CLIENTE'
+ON CONFLICT (username) DO NOTHING;
+
+INSERT INTO usuario (id_rol, nombres, username, password_hash, activo)
+SELECT r.id_rol, 'Admin Demo', 'admin.demo', 'admin-hash', TRUE
+FROM rol r
+WHERE r.nombre_rol = 'ADMINISTRADOR'
+ON CONFLICT (username) DO NOTHING;
+
+INSERT INTO usuario (id_rol, nombres, username, password_hash, activo)
+SELECT r.id_rol, 'Lucas Arevalo Salazar', 'lucas.arevalo', 'lucas-hash', TRUE
+FROM rol r
+WHERE r.nombre_rol = 'OPERADOR'
+ON CONFLICT (username) DO NOTHING;
+
+INSERT INTO usuario (id_rol, nombres, username, password_hash, activo)
+SELECT r.id_rol, 'Dennis Jun Pyo', 'dennis.jun', 'dennis-hash', TRUE
+FROM rol r
+WHERE r.nombre_rol = 'OPERADOR'
+ON CONFLICT (username) DO NOTHING;
+
+INSERT INTO usuario (id_rol, nombres, username, password_hash, activo)
+SELECT r.id_rol, 'Diego Topuria McGregor', 'diego.topuria', 'diego-hash', TRUE
 FROM rol r
 WHERE r.nombre_rol = 'OPERADOR'
 ON CONFLICT (username) DO NOTHING;

@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import type { ResumenData, Alerta, Cupon, AdminTab, Lote, Producto, Evaluacion, Maquina } from '../types'
+import type { ResumenData, Alerta, Cupon, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../types'
 import { ResumenView } from './ResumenView'
 import { AlertasView } from './AlertasView'
 import { LotesView } from './LotesView'
 import { MaquinasView } from './MaquinasView'
+import { VentasView } from './VentasView'
 import { API_BASE } from '../config'
 
 export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean) => void }) {
   const [adminAuth, setAdminAuth] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState('')
-  const [userRole, setUserRole] = useState<'admin' | 'operador' | null>(null)
+  const [userRole, setUserRole] = useState<'admin' | 'operador' | 'ventas' | 'soporte' | null>(null)
   
   const [adminTab, setAdminTab] = useState<AdminTab>('resumen')
   const [resumenData, setResumenData] = useState<ResumenData | null>(null)
@@ -21,17 +22,29 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
   const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([])
   
+  // New States
+  const [ventas, setVentas] = useState<Venta[]>([])
+  const [clientes, setClientes] = useState<Cliente[]>([])
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
+  const [inventario, setInventario] = useState<Inventario[]>([])
+
   const [loadingAdmin, setLoadingAdmin] = useState(false)
   const [alertasLoading, setAlertasLoading] = useState(false)
   const [lotesLoading, setLotesLoading] = useState(false)
   const [maquinasLoading, setMaquinasLoading] = useState(false)
   const [evaluacionesLoading, setEvaluacionesLoading] = useState(false)
+  const [ventasLoading, setVentasLoading] = useState(false)
+  const [clientesLoading, setClientesLoading] = useState(false)
+  const [usuariosLoading, setUsuariosLoading] = useState(false)
+  const [inventarioLoading, setInventarioLoading] = useState(false)
 
   const tabs: { key: AdminTab; label: string }[] = userRole === 'admin' ? [
     { key: 'resumen', label: 'Resumen' },
     { key: 'alertas', label: 'Alertas' },
-    { key: 'lotes', label: 'Lotes y QRs' },
+    { key: 'lotes', label: 'Lotes' },
     { key: 'maquinas', label: 'Máquinas' },
+    { key: 'ventas', label: 'Ventas (POS)' },
+    { key: 'inventario', label: 'Inventario General' },
   ] : []
 
   function handleLogin() {
@@ -48,6 +61,10 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
       fetchLotes()
       fetchProductos()
       fetchMaquinas()
+      fetchVentas()
+      fetchClientes()
+      fetchUsuarios()
+      fetchInventario()
     } else if (pinInput === '4321') {
       setAdminAuth(true)
       setUserRole('operador')
@@ -57,6 +74,23 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
       fetchLotes()
       fetchProductos()
       fetchMaquinas()
+      fetchUsuarios()
+    } else if (pinInput === '7777') {
+      setAdminAuth(true)
+      setUserRole('ventas')
+      setAdminTab('ventas')
+      setPinInput('')
+      setPinError('')
+      fetchLotes()
+      fetchVentas()
+      fetchClientes()
+    } else if (pinInput === '9999') {
+      setAdminAuth(true)
+      setUserRole('soporte')
+      setAdminTab('alertas')
+      setPinInput('')
+      setPinError('')
+      fetchAlertas()
     } else {
       setPinError('PIN incorrecto')
     }
@@ -75,6 +109,10 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
     setProductos([])
     setMaquinas([])
     setEvaluaciones([])
+    setVentas([])
+    setClientes([])
+    setUsuarios([])
+    setInventario([])
   }
 
   async function fetchMaquinas() {
@@ -89,6 +127,66 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
       console.error(e)
     } finally {
       setMaquinasLoading(false)
+    }
+  }
+
+  async function fetchVentas() {
+    setVentasLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/ventas`)
+      if (res.ok) {
+        const data = (await res.json()) as Venta[]
+        setVentas(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setVentasLoading(false)
+    }
+  }
+
+  async function fetchInventario() {
+    setInventarioLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/inventario`)
+      if (res.ok) {
+        const data = (await res.json()) as Inventario[]
+        setInventario(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setInventarioLoading(false)
+    }
+  }
+
+  async function fetchClientes() {
+    setClientesLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/clientes`)
+      if (res.ok) {
+        const data = (await res.json()) as Cliente[]
+        setClientes(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setClientesLoading(false)
+    }
+  }
+
+  async function fetchUsuarios() {
+    setUsuariosLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/usuarios`)
+      if (res.ok) {
+        const data = (await res.json()) as Usuario[]
+        setUsuarios(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setUsuariosLoading(false)
     }
   }
 
@@ -205,83 +303,148 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
     if (tab === 'lotes') {
       fetchLotes()
       fetchProductos()
+      fetchUsuarios()
+      fetchMaquinas()
     }
     if (tab === 'maquinas') {
       fetchMaquinas()
+    }
+    if (tab === 'ventas') {
+      fetchVentas()
+      fetchClientes()
+      fetchLotes()
+    }
+    if (tab === 'inventario') {
+      fetchInventario()
     }
   }
 
   if (!adminAuth) {
     return (
-      <div className="w-full max-w-sm mx-auto bg-white rounded-[28px] border border-[#dce7e4] shadow-[0_16px_40px_rgba(25,52,44,0.15)] p-6 animate-fadeIn">
-        <div className="text-center mb-4">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#e8fff5] flex items-center justify-center">
-            <span className="text-[#47a993] text-xl font-bold">🔒</span>
+      <div className="w-full max-w-sm mx-auto bg-white rounded-[28px] border border-border-primary shadow-[0_16px_40px_rgba(25,52,44,0.12)] p-6 animate-scaleIn">
+        <div className="text-center mb-5">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-accent-light flex items-center justify-center shadow-inner">
+            <span className="text-accent text-xl font-bold">🔒</span>
           </div>
-          <h2 className="text-lg font-bold text-[#16342d]">Acceso Administrativo</h2>
-          <p className="text-sm text-gray-500">Ingresa el PIN</p>
+          <h2 className="text-lg font-extrabold text-primary">Acceso Personal</h2>
+          <p className="text-xs text-secondary mt-1">Ingresa tu código PIN de seguridad</p>
         </div>
 
-        <label className="flex flex-col gap-1.5 mb-4">
-          <span className="text-xs font-semibold text-[#53796f]">PIN</span>
+        <label className="flex flex-col gap-1.5 mb-4 text-left">
+          <span className="text-xs font-bold text-secondary">Código PIN</span>
           <input
             type="password"
             value={pinInput}
             onChange={(e) => { setPinInput(e.target.value); setPinError('') }}
             onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}
             maxLength={6}
-            className="border border-[#d0ded9] rounded-[10px] px-3 py-2.5 text-sm text-center text-[#16342d] bg-[#fafdfe] focus:outline-2 focus:outline-[rgba(71,169,147,0.3)]"
-            placeholder="****"
+            className="border border-border-primary rounded-xl px-4 py-3 text-lg text-center font-mono tracking-widest text-primary bg-[#fafdfe] focus:outline-2 focus:outline-accent/30 transition-all"
+            placeholder="••••"
             autoFocus
           />
         </label>
 
-        {pinError && <p className="text-red-600 text-sm mb-3 text-center font-semibold">{pinError}</p>}
+        {pinError && <p className="text-red-600 text-xs mb-4 text-center font-bold">{pinError}</p>}
 
         <button
-          className="w-full py-3 rounded-full bg-gradient-to-r from-[#54b8a0] to-[#47a993] text-white font-bold cursor-pointer hover:opacity-90 transition-all disabled:opacity-50"
+          className="w-full py-3.5 rounded-full bg-gradient-to-r from-accent to-[#47a993] text-white font-extrabold cursor-pointer hover:opacity-95 transition-all shadow-md shadow-accent/20"
           onClick={handleLogin}
           disabled={!pinInput}
         >
-          Ingresar
+          Ingresar al Sistema
         </button>
 
         <button
-          className="w-full mt-2 text-xs text-gray-400 hover:text-gray-600 cursor-pointer py-2"
+          className="w-full mt-2 text-xs text-gray-400 hover:text-gray-600 cursor-pointer py-2 transition-colors font-medium"
           onClick={() => setAdminMode(false)}
         >
-          Volver a inicio
+          Volver a la encuesta pública
         </button>
+
+        {/* Demo PINs panel */}
+        <div className="mt-6 border-t border-border-light pt-4 space-y-2.5">
+          <p className="text-[10px] text-center uppercase tracking-wider text-secondary font-extrabold">PINs de demostración</p>
+          <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-center">
+            <button 
+              onClick={() => { setPinInput('1234'); setPinError(''); }}
+              className="bg-primary-light hover:bg-[#e4f3ee] text-primary p-2 rounded-lg cursor-pointer transition-all border border-border-light"
+            >
+              Admin<br/><span className="font-mono text-accent text-[9px]">1234</span>
+            </button>
+            <button 
+              onClick={() => { setPinInput('4321'); setPinError(''); }}
+              className="bg-[#f0f5fc] hover:bg-[#e1ecfc] text-blue-800 p-2 rounded-lg cursor-pointer transition-all border border-blue-100"
+            >
+              Operario<br/><span className="font-mono text-blue-500 text-[9px]">4321</span>
+            </button>
+            <button 
+              onClick={() => { setPinInput('7777'); setPinError(''); }}
+              className="bg-[#faf5ff] hover:bg-[#f3e8ff] text-purple-800 p-2 rounded-lg cursor-pointer transition-all border border-purple-100"
+            >
+              Ventas<br/><span className="font-mono text-purple-500 text-[9px]">7777</span>
+            </button>
+            <button 
+              onClick={() => { setPinInput('9999'); setPinError(''); }}
+              className="bg-[#f0faf7] hover:bg-[#dff3ec] text-green-800 p-2 rounded-lg cursor-pointer transition-all border border-green-100"
+            >
+              Soporte<br/><span className="font-mono text-green-500 text-[9px]">9999</span>
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="w-full max-w-4xl mx-auto animate-fadeIn">
-      <header className="flex items-center justify-between mb-3">
-        <div>
-          <h1 className="text-lg font-bold text-[#16342d]">
-            {userRole === 'admin' ? 'Panel Admin' : 'Panel Operario'}
-          </h1>
-          <p className="text-sm text-[#4f6f66]">MAFER-G Intelligent Connect</p>
+      <header className="flex items-center justify-between mb-4 bg-white p-4 rounded-2xl border border-border-primary shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-accent-light flex items-center justify-center font-bold text-accent text-lg">
+            {userRole === 'admin' ? '⚙️' : userRole === 'operador' ? '🧵' : userRole === 'ventas' ? '💼' : '🎧'}
+          </div>
+          <div className="text-left">
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-extrabold text-primary">
+                {userRole === 'admin' 
+                  ? 'Panel de Control' 
+                  : userRole === 'operador' 
+                  ? 'Módulo Operario' 
+                  : userRole === 'ventas' 
+                  ? 'Terminal POS' 
+                  : 'Soporte y NPS'}
+              </h1>
+              <span className={`text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider ${
+                userRole === 'admin' 
+                  ? 'bg-primary text-white' 
+                  : userRole === 'operador' 
+                  ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+                  : userRole === 'ventas'
+                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                  : 'bg-green-100 text-green-800 border border-green-200'
+              }`}>
+                {userRole === 'admin' ? 'Administrador' : userRole === 'operador' ? 'Operario' : userRole === 'ventas' ? 'Ventas' : 'Atención al Cliente'}
+              </span>
+            </div>
+            <p className="text-[11px] text-secondary font-medium">MAFER-G Intelligent Connect</p>
+          </div>
         </div>
         <button
-          className="text-xs font-bold px-4 py-2 rounded-full border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 cursor-pointer transition-colors"
+          className="text-xs font-bold px-4 py-2 rounded-full border border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 cursor-pointer transition-colors shadow-sm animate-fadeIn"
           onClick={handleLogout}
         >
-          Salir
+          Cerrar Sesión
         </button>
       </header>
 
       {userRole === 'admin' && (
-        <div className="flex gap-2 mb-4 bg-white p-1.5 rounded-2xl border border-[#dce7e4] shadow-sm overflow-x-auto">
+        <div className="flex gap-2 mb-4 bg-white p-1.5 rounded-2xl border border-border-primary shadow-sm overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all whitespace-nowrap ${
                 adminTab === tab.key
-                  ? 'bg-[#1e4a40] text-white shadow-md'
-                  : 'text-[#53796f] hover:bg-[#f0f7f5]'
+                  ? 'bg-primary text-white shadow-md shadow-primary/20'
+                  : 'text-secondary hover:bg-primary-light hover:text-primary'
               }`}
               onClick={() => handleTabChange(tab.key)}
             >
@@ -291,7 +454,7 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
         </div>
       )}
 
-      <div className="bg-white rounded-[24px] border border-[#dce7e4] shadow-sm p-6 min-h-[400px]">
+      <div className="bg-white rounded-[24px] border border-border-primary shadow-sm p-6 min-h-[400px]">
         {adminTab === 'resumen' && userRole === 'admin' && (
           <ResumenView
             loadingAdmin={loadingAdmin}
@@ -304,7 +467,7 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
             fetchCupones={fetchCupones}
           />
         )}
-        {adminTab === 'alertas' && userRole === 'admin' && (
+        {adminTab === 'alertas' && (userRole === 'admin' || userRole === 'soporte') && (
           <AlertasView alertasLoading={alertasLoading} alertas={alertas} fetchAlertas={fetchAlertas} setAlertas={setAlertas} />
         )}
         {adminTab === 'lotes' && (
@@ -312,9 +475,11 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
             lotes={lotes} 
             productos={productos} 
             maquinas={maquinas}
+            usuarios={usuarios}
             userRole={userRole}
             loading={lotesLoading} 
             fetchLotes={fetchLotes} 
+            fetchProductos={fetchProductos}
           />
         )}
         {adminTab === 'maquinas' && userRole === 'admin' && (
@@ -323,6 +488,73 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
             loading={maquinasLoading}
             fetchMaquinas={fetchMaquinas}
           />
+        )}
+        {adminTab === 'ventas' && (userRole === 'admin' || userRole === 'ventas') && (
+          <VentasView
+            ventas={ventas}
+            lotes={lotes}
+            clientes={clientes}
+            loading={ventasLoading}
+            fetchVentas={fetchVentas}
+            fetchLotes={fetchLotes}
+            fetchClientes={fetchClientes}
+            userRole={userRole}
+          />
+        )}
+        {adminTab === 'inventario' && userRole === 'admin' && (
+          <div className="space-y-6 animate-fadeIn text-left">
+            <div>
+              <h2 className="text-lg font-bold text-[#173c34]">Inventario General de Prendas</h2>
+              <p className="text-sm text-[#4f6f66]">
+                Resumen consolidado de producción, ventas y stock actual para cada tipo de prenda en la empresa.
+              </p>
+            </div>
+
+            {inventarioLoading ? (
+              <div className="text-center py-8 text-gray-400">Cargando inventario...</div>
+            ) : inventario.length === 0 ? (
+              <div className="text-center py-8 text-gray-400 border border-dashed border-[#dce7e4] rounded-2xl">
+                No hay registros de inventario.
+              </div>
+            ) : (
+              <div className="overflow-x-auto border border-[#dce7e4] rounded-xl bg-white shadow-sm">
+                <table className="w-full text-sm text-left text-gray-500">
+                  <thead className="text-xs text-[#1c4a3f] uppercase bg-[#f2faf7] border-b border-[#dce7e4]">
+                    <tr>
+                      <th className="px-4 py-3 font-bold">Prenda</th>
+                      <th className="px-4 py-3 font-bold">SKU</th>
+                      <th className="px-4 py-3 font-bold">Categoría</th>
+                      <th className="px-4 py-3 text-center font-bold">Total Producido</th>
+                      <th className="px-4 py-3 text-center font-bold">Total Vendido</th>
+                      <th className="px-4 py-3 text-center font-bold">Stock Disponible</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#eef4f2]">
+                    {inventario.map((item) => (
+                      <tr key={item.idProducto} className="hover:bg-[#fbfdfe] transition-colors">
+                        <td className="px-4 py-3 font-semibold text-[#16342d]">{item.nombrePrenda}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-[#53796f]">{item.sku}</td>
+                        <td className="px-4 py-3 text-xs text-[#2d5a50]">{item.categoriaInfantil || 'Sin Categoría'}</td>
+                        <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalProducido} uds.</td>
+                        <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalVendido} uds.</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
+                            item.stockDisponible > 20
+                              ? 'bg-green-50 text-green-700 border border-green-200'
+                              : item.stockDisponible > 0
+                              ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                              : 'bg-red-50 text-red-700 border border-red-200'
+                          }`}>
+                            {item.stockDisponible} uds.
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

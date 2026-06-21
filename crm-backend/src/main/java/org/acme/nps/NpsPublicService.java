@@ -7,6 +7,8 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.UUID;
+import java.util.List;
+import java.util.ArrayList;
 import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -32,70 +34,110 @@ public class NpsPublicService {
         
         try (Connection conn = dataSource.getConnection()) {
             
-            // 1. Obtener Lote
-            long idLote;
+            // 1. Obtener Lote y Venta
+            long idLote = -1;
+            Long idVenta = null;
+            long idCliente = -1;
+            
+            // Primero buscar en venta
             try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT id_lote FROM lote_produccion WHERE token_qr = ?")) {
+                    "SELECT id_venta, id_lote, id_cliente FROM venta WHERE token_qr = ?")) {
                 ps.setObject(1, tokenQr);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
+                        idVenta = rs.getLong("id_venta");
                         idLote = rs.getLong("id_lote");
-                    } else {
-                        throw new NpsException("El token_qr no existe o no pertenece a un lote valido.");
-                    }
-                }
-            }
-
-            // 2. Obtener o crear Cliente
-            long idCliente = -1;
-            String email;
-            String telefono;
-            String nombre;
-            if (isAnonimo) {
-                email = request.mayorista() ? "anonimo.b2b@maferg.com" : "anonimo.b2c@maferg.com";
-                telefono = null;
-                nombre = request.mayorista() ? "Cliente Anonimo B2B" : "Cliente Anonimo B2C";
-            } else {
-                email = request.email() != null ? request.email().trim().toLowerCase() : null;
-                telefono = request.telefono() != null ? request.telefono().trim() : null;
-                nombre = request.nombre() != null && !request.nombre().isBlank() ? request.nombre().trim() : "Cliente Anonimo";
-            }
-
-            // Buscar por email o por telefono
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT id_cliente FROM cliente WHERE (email = ? AND ? IS NOT NULL) OR (telefono = ? AND ? IS NOT NULL) LIMIT 1")) {
-                ps.setString(1, email);
-                ps.setString(2, email);
-                ps.setString(3, telefono);
-                ps.setString(4, telefono);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
                         idCliente = rs.getLong("id_cliente");
                     }
                 }
             }
-
-            if (idCliente == -1) {
-                // Registrar nuevo cliente
-                String tipoCliente = request.mayorista() ? "B2B" : "B2C";
-                String ciudad = request.ciudad() != null ? request.ciudad().trim() : null;
-                
+            
+            if (idVenta == null) {
+                // Legacy lot token
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "INSERT INTO cliente (tipo_cliente, nombre_razon_social, email, telefono, ciudad) VALUES (?, ?, ?, ?, ?)",
-                        Statement.RETURN_GENERATED_KEYS)) {
-                    ps.setString(1, tipoCliente);
-                    ps.setString(2, nombre);
-                    if (email != null) ps.setString(3, email); else ps.setNull(3, Types.VARCHAR);
-                    if (telefono != null) ps.setString(4, telefono); else ps.setNull(4, Types.VARCHAR);
-                    if (ciudad != null) ps.setString(5, ciudad); else ps.setNull(5, Types.VARCHAR);
-                    
-                    ps.executeUpdate();
-                    try (ResultSet rs = ps.getGeneratedKeys()) {
+                        "SELECT id_lote FROM lote_produccion WHERE token_qr = ?")) {
+                    ps.setObject(1, tokenQr);
+                    try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
-                            idCliente = rs.getLong(1);
+                            idLote = rs.getLong("id_lote");
                         } else {
-                            throw new NpsException("Error al registrar cliente.");
+                            throw new NpsException("El token_qr no existe o no pertenece a un lote o venta valido.");
                         }
+                    }
+                }
+            }
+
+            // 2. Obtener o crear Cliente (solo si idCliente no ha sido resuelto por la venta)
+            if (idCliente == -1) {
+                String email;
+                String telefono;
+                String nombre;
+                if (isAnonimo) {
+                    email = request.mayorista() ? "anonimo.b2b@maferg.com" : "anonimo.b2c@maferg.com";
+                    telefono = null;
+                    nombre = request.mayorista() ? "Cliente Anonimo B2B" : "Cliente Anonimo B2C";
+                } else {
+                    email = request.email() != null ? request.email().trim().toLowerCase() : null;
+                    telefono = request.telefono() != null ? request.telefono().trim() : null;
+                    nombre = request.nombre() != null && !request.nombre().isBlank() ? request.nombre().trim() : "Cliente Anonimo";
+                }
+
+                // Buscar por email o por telefono
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT id_cliente FROM cliente WHERE (email = ? AND ? IS NOT NULL) OR (telefono = ? AND ? IS NOT NULL) LIMIT 1")) {
+                    ps.setString(1, email);
+                    ps.setString(2, email);
+                    ps.setString(3, telefono);
+                    ps.setString(4, telefono);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            idCliente = rs.getLong("id_cliente");
+                        }
+                    }
+                }
+
+                if (idCliente == -1) {
+                    // Registrar nuevo cliente
+                    String tipoCliente = request.mayorista() ? "B2B" : "B2C";
+                    String ciudad = request.ciudad() != null ? request.ciudad().trim() : null;
+                    
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO cliente (tipo_cliente, nombre_razon_social, email, telefono, ciudad) VALUES (?, ?, ?, ?, ?)",
+                            Statement.RETURN_GENERATED_KEYS)) {
+                        ps.setString(1, tipoCliente);
+                        ps.setString(2, nombre);
+                        if (email != null) ps.setString(3, email); else ps.setNull(3, Types.VARCHAR);
+                        if (telefono != null) ps.setString(4, telefono); else ps.setNull(4, Types.VARCHAR);
+                        if (ciudad != null) ps.setString(5, ciudad); else ps.setNull(5, Types.VARCHAR);
+                        
+                        ps.executeUpdate();
+                        try (ResultSet rs = ps.getGeneratedKeys()) {
+                            if (rs.next()) {
+                                idCliente = rs.getLong(1);
+                            } else {
+                                throw new NpsException("Error al registrar cliente.");
+                            }
+                        }
+                    }
+                }
+            } else {
+                // Opción C: Actualizar datos del cliente pre-identificado si ingresa/confirma datos de contacto
+                if (!isAnonimo) {
+                    String email = request.email() != null ? request.email().trim().toLowerCase() : null;
+                    String telefono = request.telefono() != null ? request.telefono().trim() : null;
+                    String nombre = request.nombre() != null && !request.nombre().isBlank() ? request.nombre().trim() : "Cliente Anonimo";
+                    String tipoCliente = request.mayorista() ? "B2B" : "B2C";
+                    String ciudad = request.ciudad() != null ? request.ciudad().trim() : null;
+
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "UPDATE cliente SET nombre_razon_social = ?, email = ?, telefono = ?, ciudad = ?, tipo_cliente = ? WHERE id_cliente = ?")) {
+                        ps.setString(1, nombre);
+                        if (email != null) ps.setString(2, email); else ps.setNull(2, Types.VARCHAR);
+                        if (telefono != null) ps.setString(3, telefono); else ps.setNull(3, Types.VARCHAR);
+                        if (ciudad != null) ps.setString(4, ciudad); else ps.setNull(4, Types.VARCHAR);
+                        ps.setString(5, tipoCliente);
+                        ps.setLong(6, idCliente);
+                        ps.executeUpdate();
                     }
                 }
             }
@@ -106,13 +148,18 @@ public class NpsPublicService {
             long idEvaluacion;
             
             try (PreparedStatement ps = conn.prepareStatement(
-                    "INSERT INTO evaluacion_nps (id_cliente, id_lote, puntuacion, clasificacion, comentario_calidad) VALUES (?, ?, ?, ?, ?)",
+                    "INSERT INTO evaluacion_nps (id_cliente, id_lote, id_venta, puntuacion, clasificacion, comentario_calidad) VALUES (?, ?, ?, ?, ?, ?)",
                     Statement.RETURN_GENERATED_KEYS)) {
                 ps.setLong(1, idCliente);
                 ps.setLong(2, idLote);
-                ps.setInt(3, request.puntuacion());
-                ps.setString(4, clasificacion);
-                if (comentario != null) ps.setString(5, comentario); else ps.setNull(5, Types.VARCHAR);
+                if (idVenta != null) {
+                    ps.setLong(3, idVenta);
+                } else {
+                    ps.setNull(3, Types.BIGINT);
+                }
+                ps.setInt(4, request.puntuacion());
+                ps.setString(5, clasificacion);
+                if (comentario != null) ps.setString(6, comentario); else ps.setNull(6, Types.VARCHAR);
                 
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
@@ -200,6 +247,7 @@ public class NpsPublicService {
         UUID tokenQr = parsearToken(tokenQrStr);
         try (Connection conn = dataSource.getConnection()) {
             long idLote = -1;
+            Long idVenta = null;
             String codigoLote = null;
             String nombrePrenda = null;
             String sku = null;
@@ -209,18 +257,25 @@ public class NpsPublicService {
             Long idMaquina = null;
             String codigoMaquina = null;
             String nombreMaquina = null;
+            String clienteNombre = null;
+            String clienteEmail = null;
+            String clienteTelefono = null;
+            String clienteCiudad = null;
+            String clienteTipo = null;
 
-            String sql = "SELECT l.id_lote, l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, p.categoria_infantil, " +
-                         "l.id_maquina, m.codigo_maquina, m.nombre_maquina " +
-                         "FROM lote_produccion l " +
-                         "JOIN producto p ON l.id_producto = p.id_producto " +
-                         "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
-                         "WHERE l.token_qr = ?";
-                         
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            // 1. Buscar en venta primero
+            String sqlVenta = "SELECT v.id_venta, v.cantidad_vendida, l.id_lote, l.codigo_lote, l.fecha_confeccion, p.nombre_prenda, p.sku, p.categoria_infantil, " +
+                              "c.nombre_razon_social, c.email, c.telefono, c.ciudad, c.tipo_cliente " +
+                              "FROM venta v " +
+                              "JOIN lote_produccion l ON v.id_lote = l.id_lote " +
+                              "JOIN producto p ON l.id_producto = p.id_producto " +
+                              "LEFT JOIN cliente c ON v.id_cliente = c.id_cliente " +
+                              "WHERE v.token_qr = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sqlVenta)) {
                 ps.setObject(1, tokenQr);
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
+                        idVenta = rs.getLong("id_venta");
                         idLote = rs.getLong("id_lote");
                         codigoLote = rs.getString("codigo_lote");
                         nombrePrenda = rs.getString("nombre_prenda");
@@ -228,29 +283,93 @@ public class NpsPublicService {
                         categoriaInfantil = rs.getString("categoria_infantil");
                         var confeccionTs = rs.getTimestamp("fecha_confeccion");
                         fechaConfeccion = confeccionTs != null ? confeccionTs.toInstant().toString().substring(0, 10) : "";
-                        cantidad = rs.getInt("cantidad");
-                        idMaquina = rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null;
-                        codigoMaquina = rs.getString("codigo_maquina");
-                        nombreMaquina = rs.getString("nombre_maquina");
-                    } else {
-                        return null; // Token no encontrado
+                        cantidad = rs.getInt("cantidad_vendida");
+                        clienteNombre = rs.getString("nombre_razon_social");
+                        clienteEmail = rs.getString("email");
+                        clienteTelefono = rs.getString("telefono");
+                        clienteCiudad = rs.getString("ciudad");
+                        clienteTipo = rs.getString("tipo_cliente");
+                    }
+                }
+            }
+
+            if (idVenta != null) {
+                // Si es venta, obtener las máquinas concatenadas de la bitácora
+                List<String> maquinasInvolucradas = new ArrayList<>();
+                String sqlMaq = "SELECT DISTINCT m.nombre_maquina " +
+                                "FROM lote_proceso lp " +
+                                "JOIN maquina m ON lp.id_maquina = m.id_maquina " +
+                                "WHERE lp.id_lote = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sqlMaq)) {
+                    ps.setLong(1, idLote);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            maquinasInvolucradas.add(rs.getString("nombre_maquina"));
+                        }
+                    }
+                }
+                if (!maquinasInvolucradas.isEmpty()) {
+                    nombreMaquina = String.join(", ", maquinasInvolucradas);
+                } else {
+                    nombreMaquina = "Operación manual";
+                }
+            } else {
+                // Fallback a lote (legacy)
+                String sql = "SELECT l.id_lote, l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, p.categoria_infantil, " +
+                             "l.id_maquina, m.codigo_maquina, m.nombre_maquina " +
+                             "FROM lote_produccion l " +
+                             "JOIN producto p ON l.id_producto = p.id_producto " +
+                             "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
+                             "WHERE l.token_qr = ?";
+                             
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setObject(1, tokenQr);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            idLote = rs.getLong("id_lote");
+                            codigoLote = rs.getString("codigo_lote");
+                            nombrePrenda = rs.getString("nombre_prenda");
+                            sku = rs.getString("sku");
+                            categoriaInfantil = rs.getString("categoria_infantil");
+                            var confeccionTs = rs.getTimestamp("fecha_confeccion");
+                            fechaConfeccion = confeccionTs != null ? confeccionTs.toInstant().toString().substring(0, 10) : "";
+                            cantidad = rs.getInt("cantidad");
+                            idMaquina = rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null;
+                            codigoMaquina = rs.getString("codigo_maquina");
+                            nombreMaquina = rs.getString("nombre_maquina");
+                        } else {
+                            return null; // Token no encontrado
+                        }
                     }
                 }
             }
 
             // Verificar si ya tiene respuestas (para el control de única respuesta)
             boolean yaRespondido = false;
-            try (PreparedStatement ps = conn.prepareStatement(
-                    "SELECT COUNT(*) FROM evaluacion_nps WHERE id_lote = ?")) {
-                ps.setLong(1, idLote);
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        yaRespondido = rs.getInt(1) > 0;
+            if (idVenta != null) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT COUNT(*) FROM evaluacion_nps WHERE id_venta = ?")) {
+                    ps.setLong(1, idVenta);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            yaRespondido = rs.getInt(1) > 0;
+                        }
+                    }
+                }
+            } else {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT COUNT(*) FROM evaluacion_nps WHERE id_lote = ? AND id_venta IS NULL")) {
+                    ps.setLong(1, idLote);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            yaRespondido = rs.getInt(1) > 0;
+                        }
                     }
                 }
             }
 
-            return new LoteResumenDto(codigoLote, nombrePrenda, sku, categoriaInfantil, fechaConfeccion, yaRespondido, cantidad, idMaquina, codigoMaquina, nombreMaquina);
+            return new LoteResumenDto(codigoLote, nombrePrenda, sku, categoriaInfantil, fechaConfeccion, yaRespondido, cantidad, idMaquina, codigoMaquina, nombreMaquina,
+                                      clienteNombre, clienteEmail, clienteTelefono, clienteCiudad, clienteTipo);
         } catch (Exception ex) {
             if (ex instanceof NpsException) {
                 throw (NpsException) ex;

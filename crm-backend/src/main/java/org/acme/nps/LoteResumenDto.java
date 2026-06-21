@@ -10,5 +10,10 @@ public record LoteResumenDto(
     int cantidad,
     Long idMaquina,
     String codigoMaquina,
-    String nombreMaquina
+    String nombreMaquina,
+    String clienteNombre,
+    String clienteEmail,
+    String clienteTelefono,
+    String clienteCiudad,
+    String clienteTipo
 ) {}

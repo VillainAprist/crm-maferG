@@ -14,7 +14,7 @@ export function EvaluacionesView({
   const [busqueda, setBusqueda] = useState('')
 
   if (loading) {
-    return <div className="text-center py-8 text-gray-400">Cargando opiniones...</div>
+    return <div className="text-center py-8 text-secondary animate-pulse">Cargando opiniones de clientes...</div>
   }
 
   // Filtrar evaluaciones
@@ -33,13 +33,13 @@ export function EvaluacionesView({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 text-left">
         <div>
-          <h2 className="text-lg font-bold text-[#173c34]">Opiniones y Encuestas</h2>
-          <p className="text-xs text-[#58766d]">Historial de todas las encuestas respondidas por los clientes.</p>
+          <h2 className="text-lg font-extrabold text-primary">Opiniones y Encuestas</h2>
+          <p className="text-xs text-secondary">Historial de todas las encuestas respondidas por los clientes.</p>
         </div>
         <button
-          className="self-start md:self-auto px-4 py-2 rounded-full bg-gradient-to-r from-[#54b8a0] to-[#47a993] text-white font-bold text-xs cursor-pointer hover:opacity-90 transition"
+          className="self-start md:self-auto px-4 py-2 rounded-full bg-primary text-white font-bold text-xs cursor-pointer hover:bg-primary-hover transition-all"
           onClick={fetchEvaluaciones}
         >
           Recargar
@@ -47,66 +47,66 @@ export function EvaluacionesView({
       </div>
 
       {/* KPI Cards Mini */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-left">
         <button
           onClick={() => setFiltro('TODAS')}
-          className={`border rounded-xl p-2.5 text-left transition-all cursor-pointer ${
+          className={`border rounded-2xl p-3 text-left transition-all cursor-pointer shadow-xs hover-card-trigger ${
             filtro === 'TODAS'
-              ? 'border-[#1e4a40] bg-[#e8fff5] shadow-sm'
-              : 'border-[#dbe7e2] bg-[#f8fcfa] hover:bg-[#f0f7f5]'
+              ? 'border-primary bg-primary-light shadow-sm'
+              : 'border-border-primary bg-white hover:bg-gray-50'
           }`}
         >
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-[#58766d] mb-0.5">Todas</p>
-          <strong className="text-xl font-bold text-[#1c4a3f]">{countTotal}</strong>
+          <p className="text-[9px] uppercase tracking-wider font-extrabold text-secondary mb-0.5">Todas</p>
+          <strong className="text-xl font-black text-primary">{countTotal}</strong>
         </button>
         <button
           onClick={() => setFiltro('PROMOTOR')}
-          className={`border rounded-xl p-2.5 text-left transition-all cursor-pointer ${
+          className={`border rounded-2xl p-3 text-left transition-all cursor-pointer shadow-xs hover-card-trigger ${
             filtro === 'PROMOTOR'
-              ? 'border-[#1e4a40] bg-[#e8fff5] shadow-sm'
-              : 'border-[#dbe7e2] bg-[#f8fcfa] hover:bg-[#f0f7f5]'
+              ? 'border-accent bg-accent-light shadow-sm'
+              : 'border-border-primary bg-white hover:bg-gray-50'
           }`}
         >
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-emerald-600 mb-0.5">Promotores</p>
-          <strong className="text-xl font-bold text-emerald-700">{countPromotores}</strong>
+          <p className="text-[9px] uppercase tracking-wider font-extrabold text-accent-dark mb-0.5">Promotores</p>
+          <strong className="text-xl font-black text-accent-dark">{countPromotores}</strong>
         </button>
         <button
           onClick={() => setFiltro('PASIVO')}
-          className={`border rounded-xl p-2.5 text-left transition-all cursor-pointer ${
+          className={`border rounded-2xl p-3 text-left transition-all cursor-pointer shadow-xs hover-card-trigger ${
             filtro === 'PASIVO'
-              ? 'border-[#1e4a40] bg-[#e8fff5] shadow-sm'
-              : 'border-[#dbe7e2] bg-[#f8fcfa] hover:bg-[#f0f7f5]'
+              ? 'border-amber-500 bg-amber-50 shadow-sm'
+              : 'border-border-primary bg-white hover:bg-gray-50'
           }`}
         >
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-amber-600 mb-0.5">Pasivos</p>
-          <strong className="text-xl font-bold text-amber-700">{countPasivos}</strong>
+          <p className="text-[9px] uppercase tracking-wider font-extrabold text-amber-600 mb-0.5">Pasivos</p>
+          <strong className="text-xl font-black text-amber-700">{countPasivos}</strong>
         </button>
         <button
           onClick={() => setFiltro('DETRACTOR')}
-          className={`border rounded-xl p-2.5 text-left transition-all cursor-pointer ${
+          className={`border rounded-2xl p-3 text-left transition-all cursor-pointer shadow-xs hover-card-trigger ${
             filtro === 'DETRACTOR'
-              ? 'border-[#1e4a40] bg-[#e8fff5] shadow-sm'
-              : 'border-[#dbe7e2] bg-[#f8fcfa] hover:bg-[#f0f7f5]'
+              ? 'border-red-500 bg-red-50/50 shadow-sm'
+              : 'border-border-primary bg-white hover:bg-gray-50'
           }`}
         >
-          <p className="text-[10px] uppercase tracking-wider font-semibold text-rose-600 mb-0.5">Detractores</p>
-          <strong className="text-xl font-bold text-rose-700">{countDetractores}</strong>
+          <p className="text-[9px] uppercase tracking-wider font-extrabold text-red-500 mb-0.5">Detractores</p>
+          <strong className="text-xl font-black text-red-600">{countDetractores}</strong>
         </button>
       </div>
 
       {/* Buscador */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 text-left">
         <input
           type="text"
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
           placeholder="Buscar por cliente o código de lote..."
-          className="flex-1 border border-[#d0ded9] rounded-[10px] px-3.5 py-2 text-sm text-[#16342d] bg-[#fafdfe] focus:outline-2 focus:outline-[rgba(71,169,147,0.3)] placeholder:text-gray-400"
+          className="flex-1 border border-border-primary rounded-xl px-4 py-2 text-xs text-primary bg-white focus:outline-2 focus:outline-accent/30 placeholder:text-gray-400 shadow-sm"
         />
         {busqueda && (
           <button
             onClick={() => setBusqueda('')}
-            className="px-3 text-xs text-gray-500 hover:text-gray-700 font-semibold cursor-pointer"
+            className="px-3 text-xs text-gray-500 hover:text-gray-700 font-bold cursor-pointer"
           >
             Limpiar
           </button>
@@ -114,49 +114,49 @@ export function EvaluacionesView({
       </div>
 
       {evaluacionesFiltradas.length === 0 && (
-        <div className="text-center py-12 border border-dashed border-[#b8d0c6] rounded-2xl bg-[#f8fffc]">
-          <p className="text-gray-400 text-sm">No se encontraron encuestas con los filtros actuales.</p>
+        <div className="text-center py-10 border border-dashed border-border-primary rounded-2xl bg-white/40">
+          <p className="text-secondary text-xs font-semibold">No se encontraron encuestas con los filtros seleccionados.</p>
         </div>
       )}
 
       {/* Grid de Encuestas */}
-      <div className="grid gap-3">
+      <div className="grid gap-3 text-left">
         {evaluacionesFiltradas.map((item) => {
           const isAnonimo = !item.email && !item.telefono
           return (
             <div
               key={item.id}
-              className={`border rounded-xl p-4 bg-white shadow-sm transition-all hover:shadow-md border-l-4 ${
+              className={`border border-border-primary rounded-2xl p-4 bg-white shadow-sm transition-all hover-card-trigger border-l-4 ${
                 item.clasificacion === 'PROMOTOR'
-                  ? 'border-[#d8e6e1] border-l-[#34d399]'
+                  ? 'border-l-accent'
                   : item.clasificacion === 'PASIVO'
-                  ? 'border-[#d8e6e1] border-l-[#fbbf24]'
-                  : 'border-[#d8e6e1] border-l-[#f87171]'
+                  ? 'border-l-amber-400'
+                  : 'border-l-red-500'
               }`}
             >
               <div className="flex items-start justify-between gap-3 mb-2.5">
                 <div>
-                  <h3 className="font-bold text-[#1e4a40] text-sm flex items-center gap-1.5 flex-wrap">
-                    <span>{item.cliente}</span>
+                  <h3 className="font-extrabold text-primary text-sm flex items-center gap-1.5 flex-wrap">
+                    <span>{item.cliente || 'Cliente Anónimo'}</span>
                     {isAnonimo && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 border border-gray-200">
+                      <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-gray-200 text-gray-500 border border-gray-300">
                         ANÓNIMO
                       </span>
                     )}
                   </h3>
-                  <p className="text-xs text-gray-400">
-                    Lote: <strong className="text-[#58766d]">{item.lote}</strong> · {item.fecha} {item.ciudad ? `· ${item.ciudad}` : ''}
+                  <p className="text-[11px] text-secondary font-medium">
+                    Lote: <strong className="text-primary font-mono">{item.lote}</strong> · {item.fecha} {item.ciudad ? `· ${item.ciudad}` : ''}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
                   <div
-                    className={`text-center px-3 py-1 rounded-full font-black text-xs border ${
+                    className={`text-center px-3 py-1 rounded-full font-extrabold text-[10px] uppercase border ${
                       item.clasificacion === 'PROMOTOR'
-                        ? 'bg-[#edfdf7] border-[#93d3be] text-[#1f735d]'
+                        ? 'bg-accent-light border-accent/20 text-accent-dark'
                         : item.clasificacion === 'PASIVO'
-                        ? 'bg-[#fff8e9] border-[#edc57a] text-[#8a6316]'
-                        : 'bg-[#fef2f2] border-[#fca5a5] text-[#991b1b]'
+                        ? 'bg-amber-50 border-amber-200 text-amber-700'
+                        : 'bg-red-50 border-red-200 text-red-600'
                     }`}
                   >
                     NPS {item.puntuacion}
@@ -166,17 +166,17 @@ export function EvaluacionesView({
 
               {/* Información de contacto */}
               {!isAnonimo && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 text-xs text-[#53796f] bg-[#f8fcfa] rounded-lg p-2 mb-2.5 border border-[#eef4f1]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-secondary bg-[#f8fcfa] rounded-xl p-2.5 mb-2.5 border border-border-light shadow-inner">
                   {item.email && (
                     <div className="flex items-center gap-1.5 truncate">
                       <span className="text-gray-400 shrink-0">✉</span>
-                      <span className="truncate select-all font-mono">{item.email}</span>
+                      <span className="truncate select-all font-mono text-[11px] text-primary">{item.email}</span>
                     </div>
                   )}
                   {item.telefono && (
                     <div className="flex items-center gap-1.5 truncate">
                       <span className="text-gray-400 shrink-0">📞</span>
-                      <span className="truncate select-all font-mono">{item.telefono}</span>
+                      <span className="truncate select-all font-mono text-[11px] text-primary">{item.telefono}</span>
                     </div>
                   )}
                 </div>
@@ -184,11 +184,11 @@ export function EvaluacionesView({
 
               {/* Comentarios del cliente */}
               {item.comentario ? (
-                <div className="bg-[#fcfdfd] border-l-2 border-gray-300 pl-3 py-1.5 text-xs text-[#3d5a51] italic">
+                <div className="bg-[#fcfdfd] border-l-2 border-border-primary pl-3.5 py-2 text-xs text-secondary italic rounded-r-lg">
                   "{item.comentario}"
                 </div>
               ) : (
-                <p className="text-[11px] text-gray-400 italic">Sin comentarios de calidad adicionales.</p>
+                <p className="text-[10px] text-gray-400 italic">Sin comentarios adicionales del producto.</p>
               )}
             </div>
           )
@@ -197,3 +197,4 @@ export function EvaluacionesView({
     </div>
   )
 }
+

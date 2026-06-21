@@ -10,5 +10,6 @@ public record LoteDto(
     int cantidad,
     Long idMaquina,
     String codigoMaquina,
-    String nombreMaquina
+    String nombreMaquina,
+    int stock
 ) {}

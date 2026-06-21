@@ -20,6 +20,7 @@ export type Alerta = {
   email?: string
   telefono?: string
   comentario?: string
+  idLote: number
 }
 
 export type Cupon = {
@@ -60,7 +61,7 @@ export type ResumenData = {
   ultimosEventos: Evento[]
 }
 
-export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas'
+export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario'
 
 export type PantallaPublica = 'token-invalido' | 'bienvenida' | 'encuesta' | 'promotor' | 'detractor'
 
@@ -79,6 +80,37 @@ export type Maquina = {
   activo: boolean
 }
 
+export type Usuario = {
+  idUsuario: number
+  nombres: string
+  username: string
+  activo: boolean
+}
+
+export type LoteProceso = {
+  idProceso: number
+  idLote: number
+  idUsuario: number
+  nombreOperador: string
+  idMaquina: number | null
+  codigoMaquina: string | null
+  nombreMaquina: string | null
+  operacion: string
+  fechaRegistro: string
+}
+
+export type Venta = {
+  idVenta: number
+  idLote: number
+  codigoLote: string
+  nombrePrenda: string
+  idCliente: number
+  nombreCliente: string
+  cantidadVendida: number
+  tokenQr: string
+  fechaVenta: string
+}
+
 export type Lote = {
   idLote: number
   codigoLote: string
@@ -90,6 +122,7 @@ export type Lote = {
   idMaquina?: number | null
   codigoMaquina?: string | null
   nombreMaquina?: string | null
+  stock: number
 }
 
 export type LoteResumen = {
@@ -103,4 +136,28 @@ export type LoteResumen = {
   idMaquina?: number | null
   codigoMaquina?: string | null
   nombreMaquina?: string | null
+  clienteNombre?: string | null
+  clienteEmail?: string | null
+  clienteTelefono?: string | null
+  clienteCiudad?: string | null
+  clienteTipo?: string | null
+}
+
+export type Cliente = {
+  idCliente: number
+  tipoCliente: 'B2B' | 'B2C'
+  nombreRazonSocial: string
+  email?: string | null
+  telefono?: string | null
+  ciudad?: string | null
+}
+
+export type Inventario = {
+  idProducto: number
+  nombrePrenda: string
+  sku: string
+  categoriaInfantil: string
+  totalProducido: number
+  totalVendido: number
+  stockDisponible: number
 }

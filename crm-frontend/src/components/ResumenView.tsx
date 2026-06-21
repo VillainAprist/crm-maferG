@@ -108,33 +108,33 @@ export function ResumenView({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-lg font-bold text-[#173c34]">Resumen operativo</h2>
+      <h2 className="text-lg font-extrabold text-primary text-left">Resumen Operativo</h2>
 
       {/* Controles de Filtros */}
-      <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-[#f8fcfa] border border-[#dbe7e2] rounded-2xl p-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#53796f]">Segmentación:</span>
-          <div className="flex bg-white p-1 rounded-xl border border-[#d6e5e2] shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between bg-white border border-border-primary rounded-2xl p-4 shadow-sm text-left">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 flex-1">
+          <span className="text-xs font-bold text-secondary shrink-0">Segmentación:</span>
+          <div className="flex bg-[#f2faf7] p-1 rounded-xl border border-border-light w-full sm:w-auto overflow-x-auto no-scrollbar">
             <button
               onClick={() => setSegmentoFiltro('TODOS')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                segmentoFiltro === 'TODOS' ? 'bg-[#1e4a40] text-white shadow-sm' : 'text-[#53796f] hover:text-[#1c4a3f]'
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                segmentoFiltro === 'TODOS' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               Todos
             </button>
             <button
               onClick={() => setSegmentoFiltro('B2B')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                segmentoFiltro === 'B2B' ? 'bg-[#1e4a40] text-white shadow-sm' : 'text-[#53796f] hover:text-[#1c4a3f]'
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                segmentoFiltro === 'B2B' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               B2B (Mayoristas)
             </button>
             <button
               onClick={() => setSegmentoFiltro('B2C')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                segmentoFiltro === 'B2C' ? 'bg-[#1e4a40] text-white shadow-sm' : 'text-[#53796f] hover:text-[#1c4a3f]'
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                segmentoFiltro === 'B2C' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               B2C (Minoristas)
@@ -142,37 +142,37 @@ export function ResumenView({
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#53796f]">Periodo:</span>
-          <div className="flex bg-white p-1 rounded-xl border border-[#d6e5e2] shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0">
+          <span className="text-xs font-bold text-secondary shrink-0">Periodo:</span>
+          <div className="flex bg-[#f2faf7] p-1 rounded-xl border border-border-light w-full sm:w-auto overflow-x-auto no-scrollbar">
             <button
               onClick={() => setFechaFiltro('TODO')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                fechaFiltro === 'TODO' ? 'bg-[#1e4a40] text-white shadow-sm' : 'text-[#53796f] hover:text-[#1c4a3f]'
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                fechaFiltro === 'TODO' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               Todo
             </button>
             <button
               onClick={() => setFechaFiltro('HOY')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                fechaFiltro === 'HOY' ? 'bg-[#1e4a40] text-white shadow-sm' : 'text-[#53796f] hover:text-[#1c4a3f]'
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                fechaFiltro === 'HOY' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               Hoy
             </button>
             <button
               onClick={() => setFechaFiltro('SEMANA')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                fechaFiltro === 'SEMANA' ? 'bg-[#1e4a40] text-white shadow-sm' : 'text-[#53796f] hover:text-[#1c4a3f]'
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                fechaFiltro === 'SEMANA' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               7 días
             </button>
             <button
               onClick={() => setFechaFiltro('MES')}
-              className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                fechaFiltro === 'MES' ? 'bg-[#1e4a40] text-white shadow-sm' : 'text-[#53796f] hover:text-[#1c4a3f]'
+              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                fechaFiltro === 'MES' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               30 días
@@ -181,46 +181,45 @@ export function ResumenView({
         </div>
       </div>
 
-      {/* NPS Gauge Visual */}
-      <div className="bg-[#f2faf7] border border-[#d6e5e2] rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex-1 space-y-2">
-          <h3 className="font-bold text-[#1c4a3f] text-xl">Net Promoter Score</h3>
-          <p className="text-sm text-[#4f6f66]">
-            Métrica de lealtad general. Se calcula restando el porcentaje de detractores al porcentaje de promotores.
+      {/* NPS Modern Segmented Bar */}
+      <div className="bg-primary-light border border-border-primary rounded-3xl p-6 flex flex-col md:flex-row items-stretch justify-between gap-6">
+        <div className="flex-1 space-y-3 text-left">
+          <h3 className="font-extrabold text-primary text-xl">Net Promoter Score (NPS)</h3>
+          <p className="text-sm text-secondary leading-relaxed">
+            Métrica de satisfacción y lealtad de clientes. Se calcula restando el porcentaje de detractores al porcentaje de promotores.
           </p>
-          <div className="pt-2 flex gap-4 text-xs font-semibold text-[#53796f]">
+          <div className="flex flex-wrap gap-4 pt-1 text-xs font-bold text-secondary">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-green-500"></span> Promotores ({pctProm}%)
+              <span className="w-3 h-3 rounded-full bg-accent"></span> Promotores ({promotores} / {pctProm}%)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span> Pasivos ({pctPas}%)
+              <span className="w-3 h-3 rounded-full bg-amber-500"></span> Pasivos ({pasivos} / {pctPas}%)
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-red-500"></span> Detractores ({pctDet}%)
+              <span className="w-3 h-3 rounded-full bg-red-500"></span> Detractores ({detractores} / {pctDet}%)
             </span>
           </div>
         </div>
 
-        <div className="relative w-[200px] h-[100px] flex justify-center items-end shrink-0 overflow-hidden">
-          {/* Semicírculo Base (Rojo a Verde) */}
-          <div className="absolute top-0 w-[200px] h-[200px] rounded-full" 
-               style={{
-                 background: 'conic-gradient(from 270deg, #ef4444 0deg, #eab308 90deg, #22c55e 180deg)',
-                 clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)'
-               }}
-          ></div>
-          {/* Círculo interno para hueco del gauge */}
-          <div className="absolute top-[20px] w-[160px] h-[160px] rounded-full bg-[#f2faf7]"></div>
-          
-          {/* Aguja indicadora */}
-          <div className="absolute bottom-0 w-[160px] h-[2px] bg-transparent origin-center flex justify-start items-center"
-               style={{ transform: `rotate(${npsRotation}deg) translateY(-50%)`, bottom: '0px', left: '20px' }}>
-            <div className="w-[10px] h-[10px] rounded-full bg-[#1c4a3f] border-2 border-white -translate-y-1 -translate-x-1"></div>
+        <div className="flex flex-col justify-center items-center md:items-end min-w-[200px] shrink-0 gap-3 text-center md:text-right">
+          <div>
+            <span className="text-xs font-extrabold text-secondary uppercase tracking-wider block">NPS Estimado</span>
+            <div className="flex items-baseline gap-1 justify-center md:justify-end mt-0.5">
+              <span className="text-5xl font-black text-primary tracking-tight">
+                {npsEstimado >= 0 ? `+${npsEstimado}` : npsEstimado}
+              </span>
+            </div>
           </div>
           
-          <div className="absolute bottom-2 text-center">
-            <span className="block text-3xl font-black text-[#1c4a3f]">{npsEstimado}</span>
+          {/* Segmented Horizontal Bar */}
+          <div className="w-full max-w-[240px] h-3 bg-gray-200 rounded-full overflow-hidden flex shadow-inner">
+            {pctProm > 0 && <div className="bg-accent h-full transition-all duration-500" style={{ width: `${pctProm}%` }} />}
+            {pctPas > 0 && <div className="bg-amber-500 h-full transition-all duration-500" style={{ width: `${pctPas}%` }} />}
+            {pctDet > 0 && <div className="bg-red-500 h-full transition-all duration-500" style={{ width: `${pctDet}%` }} />}
           </div>
+          {totalEncuestas === 0 && (
+            <span className="text-[10px] text-gray-400 font-bold uppercase">Sin datos suficientes</span>
+          )}
         </div>
       </div>
 
@@ -232,34 +231,34 @@ export function ResumenView({
       </div>
 
       {/* Sub-pestañas locales para Opiniones, Cupones e Eventos */}
-      <div className="pt-4 border-t border-[#dce7e4]">
-        <div className="flex gap-1 mb-4 bg-[#f2faf7] p-1.5 rounded-xl border border-[#d6e5e2] max-w-md">
+      <div className="pt-4 border-t border-border-light">
+        <div className="flex gap-1 mb-4 bg-primary-light p-1.5 rounded-xl border border-border-light max-w-md">
           <button
             onClick={() => setSubTab('opiniones')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               subTab === 'opiniones'
-                ? 'bg-[#1e4a40] text-white shadow-sm'
-                : 'text-[#53796f] hover:bg-[#e0ede9]'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-secondary hover:bg-white/50 hover:text-primary'
             }`}
           >
             Opiniones ({evaluaciones.length})
           </button>
           <button
             onClick={() => setSubTab('cupones')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               subTab === 'cupones'
-                ? 'bg-[#1e4a40] text-white shadow-sm'
-                : 'text-[#53796f] hover:bg-[#e0ede9]'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-secondary hover:bg-white/50 hover:text-primary'
             }`}
           >
             Cupones ({cupones.length})
           </button>
           <button
             onClick={() => setSubTab('eventos')}
-            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               subTab === 'eventos'
-                ? 'bg-[#1e4a40] text-white shadow-sm'
-                : 'text-[#53796f] hover:bg-[#e0ede9]'
+                ? 'bg-primary text-white shadow-sm'
+                : 'text-secondary hover:bg-white/50 hover:text-primary'
             }`}
           >
             Actividad ({ultimosEventos ? ultimosEventos.length : 0})
@@ -283,22 +282,24 @@ export function ResumenView({
           )}
 
           {subTab === 'eventos' && (
-            <div className="space-y-3">
+            <div className="space-y-3 text-left">
               <div className="mb-2">
-                <h3 className="text-sm font-bold text-[#173c34]">Historial de Actividad Reciente</h3>
-                <p className="text-[11px] text-[#58766d]">Registro de los últimos eventos del sistema en tiempo real.</p>
+                <h3 className="text-sm font-extrabold text-primary">Historial de Actividad Reciente</h3>
+                <p className="text-[11px] text-secondary">Registro de los últimos eventos del sistema en tiempo real.</p>
               </div>
 
               {!ultimosEventos || ultimosEventos.length === 0 ? (
-                <p className="text-sm text-gray-400 italic py-4 text-center">No hay eventos recientes registrados.</p>
+                <p className="text-sm text-gray-400 italic py-6 text-center bg-[#fbfdfd] border border-dashed border-border-light rounded-xl">
+                  No hay eventos registrados recientemente.
+                </p>
               ) : (
-                <div className="border border-dashed border-[#b8d0c6] rounded-xl bg-[#f8fffc] p-4 space-y-2.5">
+                <div className="border border-border-light rounded-2xl bg-white p-4 space-y-3 shadow-inner max-h-[350px] overflow-y-auto">
                   {ultimosEventos.map((ev, i) => (
-                    <div key={i} className="flex items-center gap-3 text-xs text-[#5c7770]">
-                      <span className="font-mono bg-[#e8fff5] px-2 py-0.5 rounded text-[10px] text-[#1c4a3f] font-bold shrink-0">{ev.hora}</span>
-                      <div className="min-w-0 flex-1 truncate">
-                        <strong className="text-[#1c4a3f] font-bold">{ev.titulo}</strong>
-                        {ev.meta && <span className="text-gray-400 ml-1.5">({ev.meta})</span>}
+                    <div key={i} className="flex items-start gap-3 text-xs text-[#5c7770] border-b border-gray-50 pb-2.5 last:border-0 last:pb-0">
+                      <span className="font-mono bg-accent-light px-2.5 py-0.5 rounded text-[10px] text-accent-dark font-extrabold shrink-0">{ev.hora}</span>
+                      <div className="min-w-0 flex-1">
+                        <strong className="text-primary font-bold">{ev.titulo}</strong>
+                        {ev.meta && <span className="text-gray-400 block text-[10px] mt-0.5">{ev.meta}</span>}
                       </div>
                     </div>
                   ))}

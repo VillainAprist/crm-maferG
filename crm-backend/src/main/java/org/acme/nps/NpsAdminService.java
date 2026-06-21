@@ -32,7 +32,8 @@ public class NpsAdminService {
             String estado,
             String email,
             String telefono,
-            String comentario
+            String comentario,
+            long idLote
     ) {}
     public record Cupon(String codigo, String cliente, String estado, String vence) {}
     public record Evento(String hora, String titulo, String meta) {}
@@ -62,7 +63,7 @@ public class NpsAdminService {
 
     public List<Alerta> obtenerAlertas() {
         List<Alerta> alertas = new ArrayList<>();
-        String sql = "SELECT ac.id_alerta, c.nombre_razon_social, lp.codigo_lote, e.puntuacion, c.ciudad, ac.estado, c.email, c.telefono, e.comentario_calidad " +
+        String sql = "SELECT ac.id_alerta, c.nombre_razon_social, lp.codigo_lote, e.puntuacion, c.ciudad, ac.estado, c.email, c.telefono, e.comentario_calidad, lp.id_lote " +
                      "FROM alerta_calidad ac " +
                      "JOIN evaluacion_nps e ON ac.id_evaluacion = e.id_evaluacion " +
                      "JOIN cliente c ON e.id_cliente = c.id_cliente " +
@@ -85,7 +86,8 @@ public class NpsAdminService {
                         rs.getString("estado"),
                         rs.getString("email"),
                         rs.getString("telefono"),
-                        rs.getString("comentario_calidad")
+                        rs.getString("comentario_calidad"),
+                        rs.getLong("id_lote")
                 ));
             }
         } catch (Exception e) {
@@ -348,10 +350,60 @@ public class NpsAdminService {
         return productos;
     }
 
+    @Transactional
+    public ProductoDto registrarProducto(ProductoDto request) {
+        if (request.sku() == null || request.sku().trim().isEmpty()) {
+            throw new IllegalArgumentException("El SKU es obligatorio.");
+        }
+        if (request.nombrePrenda() == null || request.nombrePrenda().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de la prenda es obligatorio.");
+        }
+
+        try (Connection conn = dataSource.getConnection()) {
+            // Validar SKU único
+            try (PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM producto WHERE sku = ?")) {
+                ps.setString(1, request.sku().trim());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        throw new IllegalArgumentException("El SKU '" + request.sku() + "' ya está registrado.");
+                    }
+                }
+            }
+
+            long idProducto;
+            String sqlInsert = "INSERT INTO producto (sku, nombre_prenda, categoria_infantil) VALUES (?, ?, ?)";
+            try (PreparedStatement ps = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                ps.setString(1, request.sku().trim());
+                ps.setString(2, request.nombrePrenda().trim());
+                if (request.categoriaInfantil() != null && !request.categoriaInfantil().trim().isEmpty()) {
+                    ps.setString(3, request.categoriaInfantil().trim());
+                } else {
+                    ps.setNull(3, java.sql.Types.VARCHAR);
+                }
+                ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        idProducto = rs.getLong(1);
+                    } else {
+                        throw new NpsException("Error al registrar el producto.");
+                    }
+                }
+            }
+
+            return new ProductoDto(idProducto, request.sku().trim(), request.nombrePrenda().trim(), request.categoriaInfantil());
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException) {
+                throw (IllegalArgumentException) e;
+            }
+            throw new RuntimeException("Error al registrar producto: " + e.getMessage(), e);
+        }
+    }
+
     public List<LoteDto> obtenerLotes() {
         List<LoteDto> lotes = new ArrayList<>();
         String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
-                     "l.id_maquina, m.codigo_maquina, m.nombre_maquina " +
+                     "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
+                     "(l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock " +
                      "FROM lote_produccion l " +
                      "JOIN producto p ON l.id_producto = p.id_producto " +
                      "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
@@ -366,6 +418,7 @@ public class NpsAdminService {
                 Long idMaquina = rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null;
                 String codigoMaquina = rs.getString("codigo_maquina");
                 String nombreMaquina = rs.getString("nombre_maquina");
+                int stock = rs.getInt("stock");
                 
                 lotes.add(new LoteDto(
                         rs.getLong("id_lote"),
@@ -377,7 +430,8 @@ public class NpsAdminService {
                         rs.getInt("cantidad"),
                         idMaquina,
                         codigoMaquina,
-                        nombreMaquina
+                        nombreMaquina,
+                        stock
                 ));
             }
         } catch (Exception e) {
@@ -443,7 +497,8 @@ public class NpsAdminService {
 
             // Devolver Lote creado
             String sqlSelect = "SELECT l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
-                               "l.id_maquina, m.codigo_maquina, m.nombre_maquina " +
+                               "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
+                               "l.cantidad as stock " +
                                "FROM lote_produccion l " +
                                "JOIN producto p ON l.id_producto = p.id_producto " +
                                "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
@@ -458,6 +513,7 @@ public class NpsAdminService {
                         Long idMaquina = rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null;
                         String codigoMaquina = rs.getString("codigo_maquina");
                         String nombreMaquina = rs.getString("nombre_maquina");
+                        int stock = rs.getInt("stock");
                         
                         return new LoteDto(
                                 idLote,
@@ -469,7 +525,8 @@ public class NpsAdminService {
                                 rs.getInt("cantidad"),
                                 idMaquina,
                                 codigoMaquina,
-                                nombreMaquina
+                                nombreMaquina,
+                                stock
                         );
                     } else {
                         throw new NpsException("Lote creado no encontrado.");
@@ -532,5 +589,346 @@ public class NpsAdminService {
         } catch (Exception e) {
             throw new RuntimeException("Error al registrar máquina: " + e.getMessage(), e);
         }
+    }
+
+    public List<UsuarioDto> obtenerUsuarios() {
+        List<UsuarioDto> usuarios = new ArrayList<>();
+        String sql = "SELECT id_usuario, nombres, username, activo FROM usuario ORDER BY nombres ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                usuarios.add(new UsuarioDto(
+                    rs.getLong("id_usuario"),
+                    rs.getString("nombres"),
+                    rs.getString("username"),
+                    rs.getBoolean("activo")
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar usuarios: " + e.getMessage(), e);
+        }
+        return usuarios;
+    }
+
+    public List<LoteProcesoDto> obtenerProcesosPorLote(long idLote) {
+        List<LoteProcesoDto> procesos = new ArrayList<>();
+        String sql = "SELECT lp.id_proceso, lp.id_lote, lp.id_usuario, u.nombres as nombre_operador, " +
+                     "lp.id_maquina, m.codigo_maquina, m.nombre_maquina, lp.operacion, lp.fecha_registro " +
+                     "FROM lote_proceso lp " +
+                     "JOIN usuario u ON lp.id_usuario = u.id_usuario " +
+                     "LEFT JOIN maquina m ON lp.id_maquina = m.id_maquina " +
+                     "WHERE lp.id_lote = ? " +
+                     "ORDER BY lp.id_proceso ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idLote);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.sql.Timestamp ts = rs.getTimestamp("fecha_registro");
+                    String fecha = ts != null ? ts.toInstant().toString().substring(0, 16).replace("T", " ") : "";
+                    procesos.add(new LoteProcesoDto(
+                        rs.getLong("id_proceso"),
+                        rs.getLong("id_lote"),
+                        rs.getLong("id_usuario"),
+                        rs.getString("nombre_operador"),
+                        rs.getObject("id_maquina") != null ? rs.getLong("id_maquina") : null,
+                        rs.getString("codigo_maquina"),
+                        rs.getString("nombre_maquina"),
+                        rs.getString("operacion"),
+                        fecha
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar procesos del lote: " + e.getMessage(), e);
+        }
+        return procesos;
+    }
+
+    @Transactional
+    public LoteProcesoDto registrarProceso(long idLote, LoteProcesoDto request) {
+        String sql = "INSERT INTO lote_proceso (id_lote, id_usuario, id_maquina, operacion) VALUES (?, ?, ?, ?) RETURNING id_proceso, fecha_registro";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idLote);
+            ps.setLong(2, request.idUsuario());
+            if (request.idMaquina() != null) {
+                ps.setLong(3, request.idMaquina());
+            } else {
+                ps.setNull(3, java.sql.Types.BIGINT);
+            }
+            ps.setString(4, request.operacion());
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    long id = rs.getLong(1);
+                    java.sql.Timestamp ts = rs.getTimestamp(2);
+                    String fecha = ts != null ? ts.toInstant().toString().substring(0, 16).replace("T", " ") : "";
+                    return new LoteProcesoDto(id, idLote, request.idUsuario(), "", request.idMaquina(), "", "", request.operacion(), fecha);
+                }
+                throw new NpsException("No se pudo registrar la operación de confección.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al registrar proceso de lote: " + e.getMessage(), e);
+        }
+    }
+
+    public List<VentaDto> obtenerVentas() {
+        List<VentaDto> ventas = new ArrayList<>();
+        String sql = "SELECT v.id_venta, v.id_lote, l.codigo_lote, p.nombre_prenda, " +
+                     "v.id_cliente, c.nombre_razon_social as nombre_cliente, " +
+                     "v.cantidad_vendida, v.token_qr, v.fecha_venta " +
+                     "FROM venta v " +
+                     "JOIN lote_produccion l ON v.id_lote = l.id_lote " +
+                     "JOIN producto p ON l.id_producto = p.id_producto " +
+                     "JOIN cliente c ON v.id_cliente = c.id_cliente " +
+                     "ORDER BY v.id_venta DESC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                java.sql.Timestamp ts = rs.getTimestamp("fecha_venta");
+                String fecha = ts != null ? DATE_FORMATTER.format(ts.toInstant()) : "";
+                ventas.add(new VentaDto(
+                    rs.getLong("id_venta"),
+                    rs.getLong("id_lote"),
+                    rs.getString("codigo_lote"),
+                    rs.getString("nombre_prenda"),
+                    rs.getLong("id_cliente"),
+                    rs.getString("nombre_cliente"),
+                    rs.getInt("cantidad_vendida"),
+                    rs.getObject("token_qr").toString(),
+                    fecha
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar ventas: " + e.getMessage(), e);
+        }
+        return ventas;
+    }
+
+    @Transactional
+    public VentaDto registrarVenta(VentaCrearRequest request) {
+        if (request.cantidadVendida() <= 0) {
+            throw new IllegalArgumentException("La cantidad vendida debe ser mayor a 0.");
+        }
+
+        UUID tokenQr = UUID.randomUUID();
+
+        try (Connection conn = dataSource.getConnection()) {
+            // 0. Validar Cupón si se ingresó
+            long idCupon = -1;
+            if (request.codigoCupon() != null && !request.codigoCupon().isBlank()) {
+                String sqlCupon = "SELECT id_cupon, estado, fecha_expiracion FROM cupon_fidelizacion WHERE codigo_hash = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sqlCupon)) {
+                    ps.setString(1, request.codigoCupon().trim());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            idCupon = rs.getLong("id_cupon");
+                            String estado = rs.getString("estado");
+                            java.sql.Timestamp exp = rs.getTimestamp("fecha_expiracion");
+                            if (!"DISPONIBLE".equals(estado)) {
+                                throw new IllegalArgumentException("El cupón ingresado ya fue utilizado o no está disponible.");
+                            }
+                            if (exp != null && exp.before(new java.util.Date())) {
+                                throw new IllegalArgumentException("El cupón ingresado ha expirado.");
+                            }
+                        } else {
+                            throw new IllegalArgumentException("El código de cupón ingresado no existe.");
+                        }
+                    }
+                }
+            }
+
+            // 1. Validar Stock disponible
+            int stockDisponible = 0;
+            try (PreparedStatement ps = conn.prepareStatement(
+                    "SELECT (l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock " +
+                    "FROM lote_produccion l WHERE l.id_lote = ?")) {
+                ps.setLong(1, request.idLote());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        stockDisponible = rs.getInt("stock");
+                    } else {
+                        throw new IllegalArgumentException("El lote con ID " + request.idLote() + " no existe.");
+                    }
+                }
+            }
+
+            if (request.cantidadVendida() > stockDisponible) {
+                throw new IllegalArgumentException("Stock insuficiente. Disponible: " + stockDisponible + " unidades.");
+            }
+
+            // 2. Obtener o crear Cliente
+            long idCliente = -1;
+            if (request.idCliente() != null && request.idCliente() > 0) {
+                idCliente = request.idCliente();
+            } else {
+                // Crear cliente
+                String email = request.clienteEmail() != null ? request.clienteEmail().trim().toLowerCase() : null;
+                String telefono = request.clienteTelefono() != null ? request.clienteTelefono().trim() : null;
+                String nombre = request.clienteNombre() != null ? request.clienteNombre().trim() : "Cliente Venta";
+                String tipo = request.clienteTipo() != null ? request.clienteTipo().trim() : "B2C";
+                String ciudad = request.clienteCiudad() != null ? request.clienteCiudad().trim() : null;
+
+                if ((email == null || email.isEmpty()) && (telefono == null || telefono.isEmpty())) {
+                    throw new IllegalArgumentException("Debe ingresar correo o teléfono para registrar el cliente.");
+                }
+
+                // Buscar cliente duplicado por email o teléfono
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT id_cliente FROM cliente WHERE (email = ? AND ? IS NOT NULL) OR (telefono = ? AND ? IS NOT NULL) LIMIT 1")) {
+                    ps.setString(1, email);
+                    ps.setString(2, email);
+                    ps.setString(3, telefono);
+                    ps.setString(4, telefono);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            idCliente = rs.getLong("id_cliente");
+                        }
+                    }
+                }
+
+                if (idCliente == -1) {
+                    try (PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO cliente (tipo_cliente, nombre_razon_social, email, telefono, ciudad) VALUES (?, ?, ?, ?, ?)",
+                            java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                        ps.setString(1, tipo);
+                        ps.setString(2, nombre);
+                        if (email != null && !email.isEmpty()) ps.setString(3, email); else ps.setNull(3, java.sql.Types.VARCHAR);
+                        if (telefono != null && !telefono.isEmpty()) ps.setString(4, telefono); else ps.setNull(4, java.sql.Types.VARCHAR);
+                        if (ciudad != null && !ciudad.isEmpty()) ps.setString(5, ciudad); else ps.setNull(5, java.sql.Types.VARCHAR);
+
+                        ps.executeUpdate();
+                        try (ResultSet rs = ps.getGeneratedKeys()) {
+                            if (rs.next()) {
+                                idCliente = rs.getLong(1);
+                            } else {
+                                throw new NpsException("No se pudo registrar el nuevo cliente para la venta.");
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Registrar venta
+            long idVenta;
+            String sqlInsert = "INSERT INTO venta (id_lote, id_cliente, cantidad_vendida, token_qr, fecha_venta) VALUES (?, ?, ?, ?, now())";
+            try (PreparedStatement ps = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                ps.setLong(1, request.idLote());
+                ps.setLong(2, idCliente);
+                ps.setInt(3, request.cantidadVendida());
+                ps.setObject(4, tokenQr);
+                ps.executeUpdate();
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        idVenta = rs.getLong(1);
+                    } else {
+                        throw new NpsException("Error al generar ID para la venta.");
+                    }
+                }
+            }
+
+            // 3.5 Si hay un cupón válido, marcarlo como usado
+            if (idCupon != -1) {
+                String sqlUpdateCupon = "UPDATE cupon_fidelizacion SET estado = 'USADO', fecha_uso = now(), id_venta_uso = ? WHERE id_cupon = ?";
+                try (PreparedStatement ps = conn.prepareStatement(sqlUpdateCupon)) {
+                    ps.setLong(1, idVenta);
+                    ps.setLong(2, idCupon);
+                    ps.executeUpdate();
+                }
+            }
+
+            // 4. Retornar DTO de Venta
+            String sqlSelect = "SELECT v.id_venta, v.id_lote, l.codigo_lote, p.nombre_prenda, " +
+                               "v.id_cliente, c.nombre_razon_social as nombre_cliente, " +
+                               "v.cantidad_vendida, v.token_qr, v.fecha_venta " +
+                               "FROM venta v " +
+                               "JOIN lote_produccion l ON v.id_lote = l.id_lote " +
+                               "JOIN producto p ON l.id_producto = p.id_producto " +
+                               "JOIN cliente c ON v.id_cliente = c.id_cliente " +
+                               "WHERE v.id_venta = ?";
+            try (PreparedStatement ps = conn.prepareStatement(sqlSelect)) {
+                ps.setLong(1, idVenta);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        java.sql.Timestamp ts = rs.getTimestamp("fecha_venta");
+                        String fecha = ts != null ? DATE_FORMATTER.format(ts.toInstant()) : "";
+                        return new VentaDto(
+                            idVenta,
+                            rs.getLong("id_lote"),
+                            rs.getString("codigo_lote"),
+                            rs.getString("nombre_prenda"),
+                            rs.getLong("id_cliente"),
+                            rs.getString("nombre_cliente"),
+                            rs.getInt("cantidad_vendida"),
+                            tokenQr.toString(),
+                            fecha
+                        );
+                    } else {
+                        throw new NpsException("Venta creada no encontrada.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            if (e instanceof IllegalArgumentException || e instanceof NpsException) {
+                throw new RuntimeException(e.getMessage(), e);
+            }
+            throw new RuntimeException("Error en base de datos al registrar venta: " + e.getMessage(), e);
+        }
+    }
+
+    public List<ClienteDto> obtenerClientes() {
+        List<ClienteDto> clientes = new ArrayList<>();
+        String sql = "SELECT id_cliente, tipo_cliente, nombre_razon_social, email, telefono, ciudad FROM cliente ORDER BY nombre_razon_social ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                clientes.add(new ClienteDto(
+                    rs.getLong("id_cliente"),
+                    rs.getString("tipo_cliente"),
+                    rs.getString("nombre_razon_social"),
+                    rs.getString("email"),
+                    rs.getString("telefono"),
+                    rs.getString("ciudad")
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar clientes: " + e.getMessage(), e);
+        }
+        return clientes;
+    }
+
+    public List<InventarioDto> obtenerInventario() {
+        List<InventarioDto> inventario = new ArrayList<>();
+        String sql = "SELECT p.id_producto, p.nombre_prenda, p.sku, p.categoria_infantil, " +
+                     "  COALESCE(SUM(l.cantidad), 0) as total_producido, " +
+                     "  COALESCE((SELECT SUM(v.cantidad_vendida) FROM venta v JOIN lote_produccion lp ON v.id_lote = lp.id_lote WHERE lp.id_producto = p.id_producto), 0) as total_vendido " +
+                     "FROM producto p " +
+                     "LEFT JOIN lote_produccion l ON p.id_producto = l.id_producto " +
+                     "GROUP BY p.id_producto, p.nombre_prenda, p.sku, p.categoria_infantil " +
+                     "ORDER BY p.nombre_prenda ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                int totalProducido = rs.getInt("total_producido");
+                int totalVendido = rs.getInt("total_vendido");
+                int stockDisponible = totalProducido - totalVendido;
+                inventario.add(new InventarioDto(
+                    rs.getLong("id_producto"),
+                    rs.getString("nombre_prenda"),
+                    rs.getString("sku"),
+                    rs.getString("categoria_infantil"),
+                    totalProducido,
+                    totalVendido,
+                    stockDisponible
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar el inventario total: " + e.getMessage(), e);
+        }
+        return inventario;
     }
 }

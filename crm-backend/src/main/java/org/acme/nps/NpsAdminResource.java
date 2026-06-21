@@ -60,7 +60,7 @@ public class NpsAdminResource {
     public Response getEtiquetaQr(@PathParam("token") String token) {
         try {
             // La URL que el QR debe abrir (ajusta la base si tu frontend está en otro host/puerto)
-            String surveyUrl = "http://localhost:5173/encuesta?token=" + token;
+            String surveyUrl = "http://localhost:5173/?token=" + token;
             QRCodeWriter qrWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrWriter.encode(surveyUrl, BarcodeFormat.QR_CODE, 250, 250);
             BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
@@ -133,6 +133,19 @@ public class NpsAdminResource {
         return npsAdminService.obtenerProductos();
     }
 
+    @POST
+    @Path("/productos")
+    public Response registrarProducto(ProductoDto request) {
+        try {
+            ProductoDto dto = npsAdminService.registrarProducto(request);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
+
     @GET
     @Path("/lotes")
     public List<LoteDto> obtenerLotes() {
@@ -169,6 +182,62 @@ public class NpsAdminResource {
                     .entity(Map.of("error", e.getMessage()))
                     .build();
         }
+    }
+
+    @GET
+    @Path("/usuarios")
+    public List<UsuarioDto> obtenerUsuarios() {
+        return npsAdminService.obtenerUsuarios();
+    }
+
+    @GET
+    @Path("/lotes/{idLote}/procesos")
+    public List<LoteProcesoDto> obtenerProcesosPorLote(@PathParam("idLote") long idLote) {
+        return npsAdminService.obtenerProcesosPorLote(idLote);
+    }
+
+    @POST
+    @Path("/lotes/{idLote}/procesos")
+    public Response registrarProceso(@PathParam("idLote") long idLote, LoteProcesoDto request) {
+        try {
+            LoteProcesoDto dto = npsAdminService.registrarProceso(idLote, request);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/ventas")
+    public List<VentaDto> obtenerVentas() {
+        return npsAdminService.obtenerVentas();
+    }
+
+    @POST
+    @Path("/ventas")
+    public Response registrarVenta(VentaCrearRequest request) {
+        try {
+            VentaDto dto = npsAdminService.registrarVenta(request);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/clientes")
+    public List<ClienteDto> obtenerClientes() {
+        return npsAdminService.obtenerClientes();
+    }
+
+    @GET
+    @Path("/inventario")
+    public List<InventarioDto> obtenerInventario() {
+        return npsAdminService.obtenerInventario();
     }
 }
 
