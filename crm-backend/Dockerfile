@@ -1,11 +1,11 @@
-# Etapa 1: Compilar la aplicación Quarkus con Maven y OpenJDK 17
-FROM maven:3.8.5-openjdk-17 AS build
-COPY src /usr/src/app/src
-COPY pom.xml /usr/src/app
+# Etapa 1: Compilar la aplicación Quarkus con Maven y OpenJDK 21
+FROM maven:3.9.6-eclipse-temurin-21 AS build
+COPY crm-backend/src /usr/src/app/src
+COPY crm-backend/pom.xml /usr/src/app
 RUN mvn -f /usr/src/app/pom.xml clean package -DskipTests
 
-# Etapa 2: Crear la imagen de ejecución ligera basada en RedHat OpenJDK 17
-FROM registry.access.redhat.com/ubi8/openjdk-17:1.20
+# Etapa 2: Crear la imagen de ejecución ligera basada en RedHat OpenJDK 21
+FROM registry.access.redhat.com/ubi9/openjdk-21-runtime:1.20
 
 ENV LANGUAGE='en_US:en'
 
