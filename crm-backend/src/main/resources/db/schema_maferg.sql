@@ -202,21 +202,30 @@ INSERT INTO evaluacion_nps (id_cliente, id_lote, puntuacion, clasificacion, come
 SELECT c.id_cliente, l.id_lote, 10, 'PROMOTOR', 'Excelente calidad de tela y costuras, muy suave.', now() - interval '10 day'
 FROM cliente c, lote_produccion l
 WHERE c.email = 'maria.perez@example.com' AND l.codigo_lote = 'LOTE-2026-024'
-ON CONFLICT DO NOTHING;
+  AND NOT EXISTS (
+      SELECT 1 FROM evaluacion_nps e 
+      WHERE e.id_cliente = c.id_cliente AND e.id_lote = l.id_lote
+  );
 
 -- 2. Evaluacion detractora (4) para LOTE-2026-025 (debería detonar alerta)
 INSERT INTO evaluacion_nps (id_cliente, id_lote, puntuacion, clasificacion, comentario_calidad, fecha_registro)
 SELECT c.id_cliente, l.id_lote, 4, 'DETRACTOR', 'Llegó con un botón suelto y la costura del dobladillo deshilachada.', now() - interval '8 day'
 FROM cliente c, lote_produccion l
 WHERE c.email = 'contacto@hilosycolores.com' AND l.codigo_lote = 'LOTE-2026-025'
-ON CONFLICT DO NOTHING;
+  AND NOT EXISTS (
+      SELECT 1 FROM evaluacion_nps e 
+      WHERE e.id_cliente = c.id_cliente AND e.id_lote = l.id_lote
+  );
 
 -- 3. Evaluacion pasiva (8) para LOTE-2026-026
 INSERT INTO evaluacion_nps (id_cliente, id_lote, puntuacion, clasificacion, comentario_calidad, fecha_registro)
 SELECT c.id_cliente, l.id_lote, 8, 'PASIVO', 'Buen producto en general, pero tardó más de lo esperado.', now() - interval '2 day'
 FROM cliente c, lote_produccion l
 WHERE c.email = 'juan.gomez@example.com' AND l.codigo_lote = 'LOTE-2026-026'
-ON CONFLICT DO NOTHING;
+  AND NOT EXISTS (
+      SELECT 1 FROM evaluacion_nps e 
+      WHERE e.id_cliente = c.id_cliente AND e.id_lote = l.id_lote
+  );
 
 -- Seed de Alertas de Calidad
 -- Alerta pendiente para la evaluación detractora
@@ -225,7 +234,10 @@ SELECT e.id_evaluacion, 'PENDIENTE', NULL, now() - interval '8 day'
 FROM evaluacion_nps e
 JOIN cliente c ON e.id_cliente = c.id_cliente
 WHERE c.email = 'contacto@hilosycolores.com' AND e.puntuacion = 4
-ON CONFLICT DO NOTHING;
+  AND NOT EXISTS (
+      SELECT 1 FROM alerta_calidad a 
+      WHERE a.id_evaluacion = e.id_evaluacion
+  );
 
 -- Seed de Cupones de Fidelización
 -- Cupón generado para el cliente promotor
@@ -234,4 +246,7 @@ SELECT e.id_evaluacion, 'CUPON-MARIA-2026', 'DISPONIBLE', now() - interval '10 d
 FROM evaluacion_nps e
 JOIN cliente c ON e.id_cliente = c.id_cliente
 WHERE c.email = 'maria.perez@example.com' AND e.puntuacion = 10
-ON CONFLICT DO NOTHING;
+  AND NOT EXISTS (
+      SELECT 1 FROM cupon_fidelizacion cp 
+      WHERE cp.id_evaluacion = e.id_evaluacion
+  );
