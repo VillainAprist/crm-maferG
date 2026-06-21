@@ -34,8 +34,6 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
   const [maquinasLoading, setMaquinasLoading] = useState(false)
   const [evaluacionesLoading, setEvaluacionesLoading] = useState(false)
   const [ventasLoading, setVentasLoading] = useState(false)
-  const [clientesLoading, setClientesLoading] = useState(false)
-  const [usuariosLoading, setUsuariosLoading] = useState(false)
   const [inventarioLoading, setInventarioLoading] = useState(false)
 
   const tabs: { key: AdminTab; label: string }[] = userRole === 'admin' ? [
@@ -161,7 +159,6 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
   }
 
   async function fetchClientes() {
-    setClientesLoading(true)
     try {
       const res = await fetch(`${API_BASE}/api/nps/admin/clientes`)
       if (res.ok) {
@@ -170,13 +167,10 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
       }
     } catch (e) {
       console.error(e)
-    } finally {
-      setClientesLoading(false)
     }
   }
 
   async function fetchUsuarios() {
-    setUsuariosLoading(true)
     try {
       const res = await fetch(`${API_BASE}/api/nps/admin/usuarios`)
       if (res.ok) {
@@ -185,8 +179,6 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
       }
     } catch (e) {
       console.error(e)
-    } finally {
-      setUsuariosLoading(false)
     }
   }
 

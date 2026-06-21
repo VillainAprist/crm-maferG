@@ -103,9 +103,6 @@ export function ResumenView({
   const pctDet = totalEncuestas > 0 ? Math.round((detractores / totalEncuestas) * 100) : 0
   const pctPas = totalEncuestas > 0 ? Math.round((pasivos / totalEncuestas) * 100) : 0
 
-  // Calcula rotación para el gauge (-100 a +100 mapeado a 0-180 grados)
-  const npsRotation = ((npsEstimado + 100) / 200) * 180
-
   return (
     <div className="space-y-6">
       <h2 className="text-lg font-extrabold text-primary text-left">Resumen Operativo</h2>

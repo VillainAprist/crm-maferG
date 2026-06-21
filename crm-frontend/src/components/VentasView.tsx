@@ -10,7 +10,6 @@ interface VentasViewProps {
   fetchVentas: () => Promise<void>
   fetchLotes: () => Promise<void>
   fetchClientes: () => Promise<void>
-  userRole?: string | null
 }
 
 export function VentasView({
@@ -20,8 +19,7 @@ export function VentasView({
   loading,
   fetchVentas,
   fetchLotes,
-  fetchClientes,
-  userRole
+  fetchClientes
 }: VentasViewProps) {
   // POS Form States
   const [idLote, setIdLote] = useState<number | ''>('')
