@@ -490,7 +490,6 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
             fetchVentas={fetchVentas}
             fetchLotes={fetchLotes}
             fetchClientes={fetchClientes}
-            userRole={userRole}
           />
         )}
         {adminTab === 'inventario' && userRole === 'admin' && (
