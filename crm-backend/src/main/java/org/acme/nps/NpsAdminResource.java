@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Path("/api/nps/admin")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -29,6 +30,9 @@ public class NpsAdminResource {
 
     @Inject
     NpsAdminService npsAdminService;
+
+    @ConfigProperty(name = "app.frontend.url", defaultValue = "http://localhost:5173")
+    String frontendUrl;
 
     @GET
     @Path("/alertas")
@@ -59,8 +63,9 @@ public class NpsAdminResource {
     @Produces("image/png")
     public Response getEtiquetaQr(@PathParam("token") String token) {
         try {
-            // La URL que el QR debe abrir (ajusta la base si tu frontend está en otro host/puerto)
-            String surveyUrl = "http://localhost:5173/?token=" + token;
+            // La URL que el QR debe abrir (configurada mediante la propiedad app.frontend.url)
+            String baseUrl = frontendUrl.endsWith("/") ? frontendUrl : frontendUrl + "/";
+            String surveyUrl = baseUrl + "?token=" + token;
             QRCodeWriter qrWriter = new QRCodeWriter();
             BitMatrix bitMatrix = qrWriter.encode(surveyUrl, BarcodeFormat.QR_CODE, 250, 250);
             BufferedImage image = MatrixToImageWriter.toBufferedImage(bitMatrix);
