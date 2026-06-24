@@ -7,7 +7,7 @@ import { MaquinasView } from './MaquinasView'
 import { VentasView } from './VentasView'
 import { API_BASE } from '../config'
 
-export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean) => void }) {
+export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdminMode: (mode: boolean) => void; onNavigateToCatalog: () => void }) {
   const [adminAuth, setAdminAuth] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState('')
@@ -347,42 +347,14 @@ export function AdminDashboard({ setAdminMode }: { setAdminMode: (mode: boolean)
         </button>
 
         <button
-          className="w-full mt-2 text-xs text-gray-400 hover:text-gray-600 cursor-pointer py-2 transition-colors font-medium"
-          onClick={() => setAdminMode(false)}
+          className="w-full mt-2 text-xs text-primary hover:text-primary-dark cursor-pointer py-2 transition-colors font-medium"
+          onClick={onNavigateToCatalog}
         >
-          Volver a la encuesta pública
+          Ver Catálogo
         </button>
 
-        {/* Demo PINs panel */}
-        <div className="mt-6 border-t border-border-light pt-4 space-y-2.5">
-          <p className="text-[10px] text-center uppercase tracking-wider text-secondary font-extrabold">PINs de demostración</p>
-          <div className="grid grid-cols-4 gap-1 text-[10px] font-bold text-center">
-            <button 
-              onClick={() => { setPinInput('1234'); setPinError(''); }}
-              className="bg-primary-light hover:bg-[#e4f3ee] text-primary p-2 rounded-lg cursor-pointer transition-all border border-border-light"
-            >
-              Admin<br/><span className="font-mono text-accent text-[9px]">1234</span>
-            </button>
-            <button 
-              onClick={() => { setPinInput('4321'); setPinError(''); }}
-              className="bg-[#f0f5fc] hover:bg-[#e1ecfc] text-blue-800 p-2 rounded-lg cursor-pointer transition-all border border-blue-100"
-            >
-              Operario<br/><span className="font-mono text-blue-500 text-[9px]">4321</span>
-            </button>
-            <button 
-              onClick={() => { setPinInput('7777'); setPinError(''); }}
-              className="bg-[#faf5ff] hover:bg-[#f3e8ff] text-purple-800 p-2 rounded-lg cursor-pointer transition-all border border-purple-100"
-            >
-              Ventas<br/><span className="font-mono text-purple-500 text-[9px]">7777</span>
-            </button>
-            <button 
-              onClick={() => { setPinInput('9999'); setPinError(''); }}
-              className="bg-[#f0faf7] hover:bg-[#dff3ec] text-green-800 p-2 rounded-lg cursor-pointer transition-all border border-green-100"
-            >
-              Soporte<br/><span className="font-mono text-green-500 text-[9px]">9999</span>
-            </button>
-          </div>
-        </div>
+
+
       </div>
     )
   }

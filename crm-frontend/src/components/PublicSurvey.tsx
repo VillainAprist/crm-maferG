@@ -2,7 +2,13 @@ import { useState, useMemo, useEffect } from 'react'
 import type { PantallaPublica, NpsClasificacion, ApiResponse, LoteResumen } from '../types'
 import { API_BASE } from '../config'
 
-export function PublicSurvey({ setAdminMode }: { setAdminMode: (mode: boolean) => void }) {
+export function PublicSurvey({
+  setAdminMode,
+  onNavigateToCatalog
+}: {
+  setAdminMode: (mode: boolean) => void
+  onNavigateToCatalog: (coupon: string | null) => void
+}) {
   const params = useMemo(() => new URLSearchParams(window.location.search), [])
   const urlToken = params.get('token')
 
@@ -70,6 +76,14 @@ export function PublicSurvey({ setAdminMode }: { setAdminMode: (mode: boolean) =
 
     validarYObtenerResumen()
   }, [token])
+
+  // Auto-load demo survey if no token is present (default view)
+  useEffect(() => {
+    if (!token) {
+      modoDemoFallback();
+    }
+  }, []);
+
 
   // Formulario states
   const [paso, setPaso] = useState(1)
@@ -183,8 +197,10 @@ export function PublicSurvey({ setAdminMode }: { setAdminMode: (mode: boolean) =
       mensaje,
     }
     setResultado(mock)
-    if (clasificacion === 'DETRACTOR' || clasificacion === 'PASIVO') {
+    if (clasificacion === 'DETRACTOR') {
       setPantalla('detractor')
+    } else if (clasificacion === 'PASIVO') {
+      setPantalla('pasivo')
     } else {
       setPantalla('promotor')
     }
@@ -220,8 +236,10 @@ export function PublicSurvey({ setAdminMode }: { setAdminMode: (mode: boolean) =
       }
       const okData = data as ApiResponse
       setResultado(okData)
-      if (okData.clasificacion === 'DETRACTOR' || okData.clasificacion === 'PASIVO') {
+      if (okData.clasificacion === 'DETRACTOR') {
         setPantalla('detractor')
+      } else if (okData.clasificacion === 'PASIVO') {
+        setPantalla('pasivo')
       } else {
         setPantalla('promotor')
       }
@@ -301,10 +319,10 @@ export function PublicSurvey({ setAdminMode }: { setAdminMode: (mode: boolean) =
               </div>
             )}
             <button
-              className="w-full mt-4 py-3 rounded-full border-2 border-border-primary text-secondary font-bold text-sm cursor-pointer hover:border-accent hover:text-accent hover:bg-accent-light/30 transition-all duration-300"
-              onClick={() => setAdminMode(true)}
+              className="w-full mt-4 py-3.5 rounded-full bg-primary text-white font-extrabold uppercase tracking-wider cursor-pointer hover:bg-primary-hover active:scale-[0.98] transition-all shadow-md shadow-primary/10 flex items-center justify-center gap-2"
+              onClick={() => onNavigateToCatalog(null)}
             >
-              Ir al Panel Administrativo
+              Ver Catálogo de Colección 👕
             </button>
           </div>
         )}
@@ -707,57 +725,116 @@ export function PublicSurvey({ setAdminMode }: { setAdminMode: (mode: boolean) =
         )}
 
         {pantalla === 'promotor' && (
-          <div className="text-center py-6 space-y-5 animate-scaleIn flex-1 flex flex-col justify-center">
-            <div className="text-6xl animate-bounce">🎉</div>
-            <h1 className="text-2xl font-extrabold text-accent-dark">
+          <div className="text-center py-6 space-y-5 animate-scaleIn flex-1 flex flex-col justify-center text-left">
+            <div className="text-6xl animate-bounce text-center">🎉</div>
+            <h1 className="text-2xl font-extrabold text-accent-dark text-center leading-tight">
               ¡Gracias por tu recomendación!
             </h1>
-            <p className="text-secondary text-sm leading-relaxed px-2">
+            <p className="text-secondary text-sm leading-relaxed px-2 text-center">
               Tu opinión nos ayuda a seguir mejorando nuestros productos y mantener la máxima calidad textil.
             </p>
             {resultado?.codigoCupon && (
               <div className="border-2 border-dashed border-[#7cb9aa] rounded-2xl p-5 bg-[#f4fffb] shadow-sm transform transition-all hover:scale-[1.02] duration-300">
-                <p className="text-[10px] text-accent font-extrabold uppercase mb-2 tracking-wider">Tu cupón de fidelización</p>
-                <p className="font-mono font-extrabold text-2xl text-[#227e69] tracking-widest bg-white py-2.5 rounded-xl border border-[#c4e6dc] shadow-inner select-all">
+                <p className="text-[10px] text-accent font-extrabold uppercase mb-2 tracking-wider text-center">Tu cupón de fidelización</p>
+                <p className="font-mono font-extrabold text-2xl text-[#227e69] tracking-widest bg-white py-2.5 rounded-xl border border-[#c4e6dc] shadow-inner select-all text-center">
                   {resultado.codigoCupon}
                 </p>
-                <p className="text-[10px] text-gray-400 mt-2">Válido por 30 días en tu próxima compra</p>
+                <p className="text-[10px] text-gray-400 mt-2 text-center font-medium">Válido por 30 días en tu próxima compra</p>
               </div>
             )}
-            <p className="text-xs text-secondary bg-gray-50 border border-border-light p-3.5 rounded-xl leading-relaxed">{resultado?.mensaje}</p>
-            <button
-              className="w-full mt-4 py-3 rounded-full border-2 border-border-primary text-secondary font-bold text-sm cursor-pointer hover:border-accent hover:text-accent hover:bg-accent-light/30 transition-all duration-300"
-              onClick={() => {
-                reiniciarFormulario()
-                setPantalla('bienvenida')
-              }}
-            >
-              Responder otra encuesta
-            </button>
+            <p className="text-xs text-secondary bg-gray-50 border border-border-light p-3.5 rounded-xl leading-relaxed text-center font-medium">{resultado?.mensaje}</p>
+            
+            <div className="space-y-3 pt-2">
+              <button
+                className="w-full py-3.5 rounded-full bg-gradient-to-r from-accent to-[#47a993] text-white font-extrabold uppercase tracking-wider cursor-pointer hover:opacity-95 active:scale-[0.98] transition-all shadow-md shadow-accent/20 flex items-center justify-center gap-2"
+                onClick={() => onNavigateToCatalog(resultado?.codigoCupon || null)}
+              >
+                Explorar Catálogo y Usar Cupón 🛍️
+              </button>
+              <button
+                className="w-full py-3 rounded-full border border-border-primary text-secondary font-bold text-sm cursor-pointer hover:bg-gray-50 transition-all duration-300"
+                onClick={() => {
+                  reiniciarFormulario()
+                  setPantalla('bienvenida')
+                }}
+              >
+                Volver al Inicio
+              </button>
+            </div>
+          </div>
+        )}
+
+        {pantalla === 'pasivo' && (
+          <div className="text-center py-6 space-y-5 animate-scaleIn flex-1 flex flex-col justify-center text-left">
+            <div className="text-6xl animate-bounce text-center">✨</div>
+            <h1 className="text-2xl font-extrabold text-primary text-center leading-tight">
+              ¡Gracias por tu opinión!
+            </h1>
+            <p className="text-secondary text-sm leading-relaxed px-2 text-center">
+              Tu valoración nos ayuda a perfeccionar la calidad textil de cada prenda que confeccionamos.
+            </p>
+            {resultado?.mensaje && (
+              <p className="text-xs text-secondary bg-gray-50 border border-border-light p-3.5 rounded-xl leading-relaxed text-center font-medium">{resultado.mensaje}</p>
+            )}
+            
+            <div className="space-y-3 pt-2">
+              <button
+                className="w-full py-3.5 rounded-full bg-primary text-white font-extrabold uppercase tracking-wider cursor-pointer hover:bg-primary-hover active:scale-[0.98] transition-all shadow-md shadow-primary/10 flex items-center justify-center gap-2"
+                onClick={() => onNavigateToCatalog(null)}
+              >
+                Ver Catálogo de Productos 👕
+              </button>
+              <button
+                className="w-full py-3 rounded-full border border-border-primary text-secondary font-bold text-sm cursor-pointer hover:bg-gray-50 transition-all duration-300"
+                onClick={() => {
+                  reiniciarFormulario()
+                  setPantalla('bienvenida')
+                }}
+              >
+                Volver al Inicio
+              </button>
+            </div>
           </div>
         )}
 
         {pantalla === 'detractor' && (
-          <div className="text-center py-6 space-y-5 animate-scaleIn flex-1 flex flex-col justify-center">
-            <div className="text-6xl opacity-90">💙</div>
-            <h1 className="text-2xl font-extrabold text-primary">
-              Gracias por tu feedback
+          <div className="text-center py-6 space-y-5 animate-scaleIn flex-1 flex flex-col justify-center text-left">
+            <div className="text-6xl opacity-90 text-center">💙</div>
+            <h1 className="text-2xl font-extrabold text-primary text-center leading-tight">
+              Lamentamos tu experiencia
             </h1>
-            <p className="text-secondary text-sm leading-relaxed px-2">
-              Lamentamos que el producto no haya cumplido tus expectativas. Hemos registrado el tipo de error y nuestro equipo lo revisará prioritariamente.
+            <p className="text-secondary text-sm leading-relaxed px-2 text-center">
+              Tu opinión es muy importante. Hemos abierto una alerta de calidad inmediata para revisar lo ocurrido con este lote y evitar que se repita.
             </p>
             {resultado?.mensaje && (
-              <p className="text-xs text-secondary italic bg-[#f2faf7] border border-[#d6e5e2] p-3.5 rounded-xl leading-relaxed">{resultado.mensaje}</p>
+              <p className="text-xs text-secondary bg-red-50/50 border border-red-100 p-3.5 rounded-xl leading-relaxed text-center font-medium">{resultado.mensaje}</p>
             )}
-            <button
-              className="w-full mt-4 py-3 rounded-full border-2 border-border-primary text-secondary font-bold text-sm cursor-pointer hover:border-primary hover:text-primary hover:bg-primary-light/40 transition-all duration-300"
-              onClick={() => {
-                reiniciarFormulario()
-                setPantalla('bienvenida')
-              }}
-            >
-              Responder otra encuesta
-            </button>
+            
+            <div className="space-y-3 pt-2">
+              <a
+                href={`https://wa.me/51999999999?text=Hola,%20califiqu%C3%A9%20el%20lote%20${loteInfo?.codigoLote || 'N/A'}%20de%20la%20prenda%20${loteInfo?.nombrePrenda || 'Textil'}%20con%20una%20nota%20baja%20y%20me%20gustar%C3%ADa%20ser%20atendido.`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-3.5 rounded-full bg-[#25D366] text-white font-extrabold uppercase tracking-wider cursor-pointer hover:opacity-95 active:scale-[0.98] transition-all shadow-md shadow-green-500/20 flex items-center justify-center gap-2"
+              >
+                💬 Contactar Soporte por WhatsApp
+              </a>
+              <button
+                className="w-full py-3 rounded-full border border-border-primary text-secondary font-bold text-sm cursor-pointer hover:bg-gray-50 transition-all duration-300"
+                onClick={() => onNavigateToCatalog(null)}
+              >
+                Ver Catálogo de Colección
+              </button>
+              <button
+                className="w-full py-2.5 rounded-full border border-transparent text-gray-400 font-bold text-xs cursor-pointer hover:text-secondary transition-all"
+                onClick={() => {
+                  reiniciarFormulario()
+                  setPantalla('bienvenida')
+                }}
+              >
+                Volver al Inicio
+              </button>
+            </div>
           </div>
         )}
       </div>

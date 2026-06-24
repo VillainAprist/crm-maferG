@@ -63,7 +63,7 @@ export type ResumenData = {
 
 export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario'
 
-export type PantallaPublica = 'token-invalido' | 'bienvenida' | 'encuesta' | 'promotor' | 'detractor'
+export type PantallaPublica = 'token-invalido' | 'bienvenida' | 'encuesta' | 'promotor' | 'detractor' | 'pasivo'
 
 export type Producto = {
   id: number
