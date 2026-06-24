@@ -1,33 +1,6 @@
-# MAFER-G Intelligent Connect - Sistema CRM & Trazabilidad Física de Producción con Integración NPS
-
-Este repositorio contiene el código fuente de **MAFER-G Intelligent Connect**, una solución tecnológica empresarial y proyecto de tesis enfocado en optimizar el control de calidad, la fidelización del cliente y la trazabilidad de la cadena de producción textil mediante códigos QR.
-
-El sistema unifica las transacciones de venta, el seguimiento físico de la fabricación (lotes, operarios, maquinaria), la recolección de feedback de clientes usando la metodología **NPS (Net Promoter Score)**, la gestión automatizada de alertas de calidad y programas de fidelización comercial.
-
----
-
 ## 🚀 Arquitectura y Módulos del Sistema
 
 El proyecto está diseñado bajo un enfoque modular y arquitectura desacoplada:
-
-```mermaid
-graph TD
-    subgraph Cliente final (QR Físico)
-        A[Escaneo QR de Prenda] --> B[Encuesta NPS Pública]
-    end
-
-    subgraph Plataforma Web (Roles de Usuario)
-        C[Admin: Dashboard & Reportes]
-        D[Operario: Registro de Lotes & Procesos]
-        E[Vendedor: Terminal POS / Registrar Ventas]
-        F[Soporte: Gestión de Alertas e Historial]
-    end
-
-    subgraph Backend & DB
-        B & C & D & E & F --> G[API REST Quarkus]
-        G --> H[Base de Datos PostgreSQL - Supabase]
-    end
-```
 
 ### 1. Módulo de Producción y Trazabilidad Física
 *   **Registro de Lotes:** Permite agrupar las prendas confeccionadas y asignarles un identificador único enlazado a un código QR (`UUID`).
