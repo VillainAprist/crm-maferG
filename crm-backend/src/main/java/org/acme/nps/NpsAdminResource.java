@@ -220,6 +220,12 @@ public class NpsAdminResource {
         return npsAdminService.obtenerVentas();
     }
 
+    @GET
+    @Path("/ventas/resumen")
+    public NpsAdminService.ResumenVentas obtenerResumenVentas() {
+        return npsAdminService.obtenerResumenVentas();
+    }
+
     @POST
     @Path("/ventas")
     public Response registrarVenta(VentaCrearRequest request) {

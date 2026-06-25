@@ -677,7 +677,8 @@ public class NpsAdminService {
         List<VentaDto> ventas = new ArrayList<>();
         String sql = "SELECT v.id_venta, v.id_lote, l.codigo_lote, p.nombre_prenda, " +
                      "v.id_cliente, c.nombre_razon_social as nombre_cliente, " +
-                     "v.cantidad_vendida, v.token_qr, v.fecha_venta " +
+                     "v.cantidad_vendida, v.unidad_venta, v.precio_unitario, v.descuento_porcentaje, v.monto_total, " +
+                     "v.token_qr, v.fecha_venta " +
                      "FROM venta v " +
                      "JOIN lote_produccion l ON v.id_lote = l.id_lote " +
                      "JOIN producto p ON l.id_producto = p.id_producto " +
@@ -697,6 +698,10 @@ public class NpsAdminService {
                     rs.getLong("id_cliente"),
                     rs.getString("nombre_cliente"),
                     rs.getInt("cantidad_vendida"),
+                    rs.getString("unidad_venta"),
+                    rs.getDouble("precio_unitario"),
+                    rs.getInt("descuento_porcentaje"),
+                    rs.getDouble("monto_total"),
                     rs.getObject("token_qr").toString(),
                     fecha
                 ));
@@ -705,6 +710,76 @@ public class NpsAdminService {
             throw new RuntimeException("Error al consultar ventas: " + e.getMessage(), e);
         }
         return ventas;
+    }
+
+    public record VentaPorProducto(String nombrePrenda, int unidades, double monto) {}
+    public record VentaPorMes(String mes, int unidades, double monto) {}
+    public record ResumenVentas(
+            double totalFacturado,
+            int totalUnidadesVendidas,
+            int totalVentas,
+            double promedioVenta,
+            List<VentaPorProducto> porProducto,
+            List<VentaPorMes> porMes
+    ) {}
+
+    public ResumenVentas obtenerResumenVentas() {
+        double totalFacturado = 0;
+        int totalUnidades = 0;
+        int totalVentas = 0;
+        double promedioVenta = 0;
+        List<VentaPorProducto> porProducto = new ArrayList<>();
+        List<VentaPorMes> porMes = new ArrayList<>();
+
+        String sqlGlobal = "SELECT COUNT(*) as total_ventas, COALESCE(SUM(monto_total),0) as total_facturado, " +
+                           "COALESCE(SUM(cantidad_vendida),0) as total_unidades, " +
+                           "COALESCE(AVG(NULLIF(monto_total,0)),0) as promedio FROM venta";
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement ps = conn.prepareStatement(sqlGlobal);
+                 ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    totalVentas = rs.getInt("total_ventas");
+                    totalFacturado = rs.getDouble("total_facturado");
+                    totalUnidades = rs.getInt("total_unidades");
+                    promedioVenta = rs.getDouble("promedio");
+                }
+            }
+
+            String sqlPorProducto = "SELECT p.nombre_prenda, COALESCE(SUM(v.cantidad_vendida),0) as unidades, " +
+                                    "COALESCE(SUM(v.monto_total),0) as monto " +
+                                    "FROM venta v JOIN lote_produccion l ON v.id_lote = l.id_lote " +
+                                    "JOIN producto p ON l.id_producto = p.id_producto " +
+                                    "GROUP BY p.id_producto, p.nombre_prenda ORDER BY monto DESC LIMIT 10";
+            try (PreparedStatement ps = conn.prepareStatement(sqlPorProducto);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    porProducto.add(new VentaPorProducto(
+                        rs.getString("nombre_prenda"),
+                        rs.getInt("unidades"),
+                        rs.getDouble("monto")
+                    ));
+                }
+            }
+
+            String sqlPorMes = "SELECT TO_CHAR(fecha_venta, 'YYYY-MM') as mes, " +
+                               "COALESCE(SUM(cantidad_vendida),0) as unidades, " +
+                               "COALESCE(SUM(monto_total),0) as monto " +
+                               "FROM venta WHERE fecha_venta >= now() - interval '6 months' " +
+                               "GROUP BY TO_CHAR(fecha_venta, 'YYYY-MM') ORDER BY mes ASC";
+            try (PreparedStatement ps = conn.prepareStatement(sqlPorMes);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    porMes.add(new VentaPorMes(
+                        rs.getString("mes"),
+                        rs.getInt("unidades"),
+                        rs.getDouble("monto")
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al obtener resumen de ventas: " + e.getMessage(), e);
+        }
+        return new ResumenVentas(totalFacturado, totalUnidades, totalVentas, promedioVenta, porProducto, porMes);
     }
 
     @Transactional
@@ -811,14 +886,22 @@ public class NpsAdminService {
                 }
             }
 
-            // 3. Registrar venta
+            // 3. Registrar venta con precio, unidad y descuento
             long idVenta;
-            String sqlInsert = "INSERT INTO venta (id_lote, id_cliente, cantidad_vendida, token_qr, fecha_venta) VALUES (?, ?, ?, ?, now())";
+            int descuentoPct = (idCupon != -1) ? 15 : 0;
+            double precioUnitario = request.precioUnitario() > 0 ? request.precioUnitario() : 0.0;
+            String unidadVenta = (request.unidadVenta() != null && request.unidadVenta().equalsIgnoreCase("DOCENA")) ? "DOCENA" : "UNIDAD";
+            double montoTotal = precioUnitario * request.cantidadVendida() * (1.0 - descuentoPct / 100.0);
+            String sqlInsert = "INSERT INTO venta (id_lote, id_cliente, cantidad_vendida, token_qr, fecha_venta, precio_unitario, unidad_venta, descuento_porcentaje, monto_total) VALUES (?, ?, ?, ?, now(), ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 ps.setLong(1, request.idLote());
                 ps.setLong(2, idCliente);
                 ps.setInt(3, request.cantidadVendida());
                 ps.setObject(4, tokenQr);
+                ps.setDouble(5, precioUnitario);
+                ps.setString(6, unidadVenta);
+                ps.setInt(7, descuentoPct);
+                ps.setDouble(8, montoTotal);
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
@@ -842,7 +925,8 @@ public class NpsAdminService {
             // 4. Retornar DTO de Venta
             String sqlSelect = "SELECT v.id_venta, v.id_lote, l.codigo_lote, p.nombre_prenda, " +
                                "v.id_cliente, c.nombre_razon_social as nombre_cliente, " +
-                               "v.cantidad_vendida, v.token_qr, v.fecha_venta " +
+                               "v.cantidad_vendida, v.unidad_venta, v.precio_unitario, v.descuento_porcentaje, v.monto_total, " +
+                               "v.token_qr, v.fecha_venta " +
                                "FROM venta v " +
                                "JOIN lote_produccion l ON v.id_lote = l.id_lote " +
                                "JOIN producto p ON l.id_producto = p.id_producto " +
@@ -862,6 +946,10 @@ public class NpsAdminService {
                             rs.getLong("id_cliente"),
                             rs.getString("nombre_cliente"),
                             rs.getInt("cantidad_vendida"),
+                            rs.getString("unidad_venta"),
+                            rs.getDouble("precio_unitario"),
+                            rs.getInt("descuento_porcentaje"),
+                            rs.getDouble("monto_total"),
                             tokenQr.toString(),
                             fecha
                         );

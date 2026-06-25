@@ -507,7 +507,7 @@ export function LotesView({
             {['TODO', 'HOY', 'SEMANA', 'MES'].map((f) => (
               <button
                 key={f}
-                onClick={() => setFechaFiltro(f as any)}
+                onClick={() => setFechaFiltro(f as 'TODO' | 'HOY' | 'SEMANA' | 'MES')}
                 type="button"
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer whitespace-nowrap ${
                   fechaFiltro === f ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'

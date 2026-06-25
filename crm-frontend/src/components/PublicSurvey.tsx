@@ -2,6 +2,10 @@ import { useState, useMemo, useEffect } from 'react'
 import type { PantallaPublica, NpsClasificacion, ApiResponse, LoteResumen } from '../types'
 import { API_BASE } from '../config'
 
+function generarCodigoCuponDemo(): string {
+  return 'MAFERG-DEMO' + Math.random().toString(36).slice(2, 5).toUpperCase()
+}
+
 export function PublicSurvey({
   setAdminMode,
   onNavigateToCatalog
@@ -12,18 +16,33 @@ export function PublicSurvey({
   const params = useMemo(() => new URLSearchParams(window.location.search), [])
   const urlToken = params.get('token')
 
-  const [token, setToken] = useState<string | null>(urlToken)
+  const [token, setToken] = useState<string | null>(urlToken || '3fa85f64-5717-4562-b3fc-2c963f66afa6')
   const [manualToken, setManualToken] = useState('')
   const [cargandoDemo, setCargandoDemo] = useState(false)
-  const [modoDemo, setModoDemo] = useState(false)
+  const [modoDemo, setModoDemo] = useState(!urlToken)
 
-  const [pantalla, setPantalla] = useState<PantallaPublica>(
-    token ? 'bienvenida' : 'token-invalido',
-  )
+  const [pantalla, setPantalla] = useState<PantallaPublica>('bienvenida')
 
   const [loteInfo, setLoteInfo] = useState<LoteResumen | null>(null)
   const [validandoLote, setValidandoLote] = useState(false)
   const [loteYaRespondido, setLoteYaRespondido] = useState(false)
+
+  // Formulario states
+  const [paso, setPaso] = useState(1)
+  const [mayorista, setMayorista] = useState(false)
+  const [nombre, setNombre] = useState('')
+  const [ciudad, setCiudad] = useState('')
+  const [aceptoDatos, setAceptoDatos] = useState(false)
+  const [email, setEmail] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [errorDetalle, setErrorDetalle] = useState('')
+
+  const [puntuacion, setPuntuacion] = useState<number | null>(null)
+  const [comentario, setComentario] = useState('')
+  const [enviando, setEnviando] = useState(false)
+  const [error, setError] = useState('')
+  const [errorTipo, setErrorTipo] = useState<string>('')
+  const [resultado, setResultado] = useState<ApiResponse | null>(null)
 
   useEffect(() => {
     if (!token) return
@@ -77,30 +96,22 @@ export function PublicSurvey({
     validarYObtenerResumen()
   }, [token])
 
+  function modoDemoFallback() {
+    setModoDemo(true)
+    const fakeToken = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
+    setToken(fakeToken)
+    window.history.replaceState(null, '', `?token=${fakeToken}`)
+    setPantalla('bienvenida')
+  }
+
   // Auto-load demo survey if no token is present (default view)
   useEffect(() => {
-    if (!token) {
-      modoDemoFallback();
+    if (!urlToken) {
+      window.history.replaceState(null, '', `?token=3fa85f64-5717-4562-b3fc-2c963f66afa6`)
     }
-  }, []);
+  }, [urlToken]);
 
 
-  // Formulario states
-  const [paso, setPaso] = useState(1)
-  const [mayorista, setMayorista] = useState(false)
-  const [nombre, setNombre] = useState('')
-  const [ciudad, setCiudad] = useState('')
-  const [aceptoDatos, setAceptoDatos] = useState(false)
-  const [email, setEmail] = useState('')
-  const [telefono, setTelefono] = useState('')
-  const [errorDetalle, setErrorDetalle] = useState('')
-
-  const [puntuacion, setPuntuacion] = useState<number | null>(null)
-  const [comentario, setComentario] = useState('')
-  const [enviando, setEnviando] = useState(false)
-  const [error, setError] = useState('')
-  const [errorTipo, setErrorTipo] = useState<string>('')
-  const [resultado, setResultado] = useState<ApiResponse | null>(null)
 
   async function reiniciarFormulario() {
     setPaso(1)
@@ -167,18 +178,11 @@ export function PublicSurvey({
     }
   }
 
-  function modoDemoFallback() {
-    setModoDemo(true)
-    const fakeToken = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
-    setToken(fakeToken)
-    window.history.replaceState(null, '', `?token=${fakeToken}`)
-    setPantalla('bienvenida')
-  }
 
   function ejecutarModoDemoOffline() {
     setModoDemo(true)
     const clasificacion: NpsClasificacion = puntuacion !== null ? getClasificacion(puntuacion) : 'PASIVO';
-    const codigoCupon = (clasificacion === 'PROMOTOR' && aceptoDatos) ? 'MAFERG-DEMO' + Math.random().toString(36).slice(2, 5).toUpperCase() : null
+    const codigoCupon = (clasificacion === 'PROMOTOR' && aceptoDatos) ? generarCodigoCuponDemo() : null
     const mensaje = clasificacion === 'DETRACTOR'
       ? 'Gracias por tu feedback. Abrimos una alerta de calidad para atender tu caso.'
       : clasificacion === 'PROMOTOR'

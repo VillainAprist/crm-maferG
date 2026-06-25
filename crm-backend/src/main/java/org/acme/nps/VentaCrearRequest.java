@@ -8,6 +8,8 @@ public record VentaCrearRequest(
     String clienteEmail,
     String clienteTelefono,
     String clienteCiudad,
-    int cantidadVendida,
+    int cantidadVendida,       // siempre en unidades (el frontend convierte docenas)
+    double precioUnitario,     // precio por unidad o por docena, según unidadVenta
+    String unidadVenta,        // "UNIDAD" | "DOCENA"
     String codigoCupon
 ) {}

@@ -8,6 +8,10 @@ public record VentaDto(
     long idCliente,
     String nombreCliente,
     int cantidadVendida,
+    String unidadVenta,
+    double precioUnitario,
+    int descuentoPorcentaje,
+    double montoTotal,
     String tokenQr,
     String fechaVenta
 ) {}

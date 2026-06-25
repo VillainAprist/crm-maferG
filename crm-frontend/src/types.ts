@@ -107,6 +107,10 @@ export type Venta = {
   idCliente: number
   nombreCliente: string
   cantidadVendida: number
+  unidadVenta: 'UNIDAD' | 'DOCENA'
+  precioUnitario: number
+  descuentoPorcentaje: number
+  montoTotal: number
   tokenQr: string
   fechaVenta: string
 }
@@ -160,4 +164,13 @@ export type Inventario = {
   totalProducido: number
   totalVendido: number
   stockDisponible: number
+}
+
+export type ResumenVentas = {
+  totalFacturado: number
+  totalUnidadesVendidas: number
+  totalVentas: number
+  promedioVenta: number
+  porProducto: { nombrePrenda: string; unidades: number; monto: number }[]
+  porMes: { mes: string; unidades: number; monto: number }[]
 }

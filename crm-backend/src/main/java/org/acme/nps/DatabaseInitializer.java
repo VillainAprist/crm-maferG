@@ -100,6 +100,16 @@ public class DatabaseInitializer {
                     LOG.warn("No se pudo asegurar la columna id_venta_uso en cupon_fidelizacion: " + ex.getMessage());
                 }
 
+                // 7. Asegurar columnas de precio en venta (POS con docenas y precio libre)
+                try {
+                    stmt.execute("ALTER TABLE venta ADD COLUMN IF NOT EXISTS precio_unitario DECIMAL(10,2) NOT NULL DEFAULT 0");
+                    stmt.execute("ALTER TABLE venta ADD COLUMN IF NOT EXISTS unidad_venta VARCHAR(10) NOT NULL DEFAULT 'UNIDAD'");
+                    stmt.execute("ALTER TABLE venta ADD COLUMN IF NOT EXISTS descuento_porcentaje INT NOT NULL DEFAULT 0");
+                    stmt.execute("ALTER TABLE venta ADD COLUMN IF NOT EXISTS monto_total DECIMAL(10,2) NOT NULL DEFAULT 0");
+                } catch (Exception ex) {
+                    LOG.warn("No se pudo asegurar las columnas de precio en venta: " + ex.getMessage());
+                }
+
                 // 7. Ejecutar esquema general (con seeds e índices)
                 stmt.execute(sql);
                 LOG.info("Database schema initialized/verified successfully.");
