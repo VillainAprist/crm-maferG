@@ -12,7 +12,8 @@ interface VentasViewProps {
   fetchClientes: () => Promise<void>
 }
 
-function formatSoles(n: number) {
+function formatSoles(n?: number | null) {
+  if (n === undefined || n === null || isNaN(n)) return 'S/ 0.00'
   return 'S/ ' + n.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
@@ -252,7 +253,7 @@ export function VentasView({
   ), [ventas, filtroVenta])
 
   const totalHistorial = useMemo(() =>
-    ventas.reduce((acc, v) => acc + v.montoTotal, 0), [ventas])
+    ventas.reduce((acc, v) => acc + (v.montoTotal ?? 0), 0), [ventas])
 
   return (
     <div className="space-y-5 animate-fadeIn">
