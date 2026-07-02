@@ -13,7 +13,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState('')
   const [userRole, setUserRole] = useState<'admin' | 'operador' | 'ventas' | 'soporte' | null>(null)
-  
+
   const [adminTab, setAdminTab] = useState<AdminTab>('resumen')
   const [resumenData, setResumenData] = useState<ResumenData | null>(null)
   const [alertas, setAlertas] = useState<Alerta[]>([])
@@ -21,7 +21,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   const [productos, setProductos] = useState<Producto[]>([])
   const [maquinas, setMaquinas] = useState<Maquina[]>([])
   const [evaluaciones, setEvaluaciones] = useState<Evaluacion[]>([])
-  
+
   // New States
   const [ventas, setVentas] = useState<Venta[]>([])
   const [clientes, setClientes] = useState<Cliente[]>([])
@@ -358,23 +358,22 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
           <div className="text-left">
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-extrabold text-primary">
-                {userRole === 'admin' 
-                  ? 'Panel de Control' 
-                  : userRole === 'operador' 
-                  ? 'Módulo Operario' 
-                  : userRole === 'ventas' 
-                  ? 'Terminal POS' 
-                  : 'Soporte y NPS'}
+                {userRole === 'admin'
+                  ? 'Panel de Control'
+                  : userRole === 'operador'
+                    ? 'Módulo Operario'
+                    : userRole === 'ventas'
+                      ? 'Terminal POS'
+                      : 'Soporte y NPS'}
               </h1>
-              <span className={`text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider ${
-                userRole === 'admin' 
-                  ? 'bg-primary text-white' 
-                  : userRole === 'operador' 
-                  ? 'bg-blue-100 text-blue-800 border border-blue-200' 
+              <span className={`text-[9px] font-extrabold uppercase px-2.5 py-0.5 rounded-full tracking-wider ${userRole === 'admin'
+                ? 'bg-primary text-white'
+                : userRole === 'operador'
+                  ? 'bg-blue-100 text-blue-800 border border-blue-200'
                   : userRole === 'ventas'
-                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                  : 'bg-green-100 text-green-800 border border-green-200'
-              }`}>
+                    ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                    : 'bg-green-100 text-green-800 border border-green-200'
+                }`}>
                 {userRole === 'admin' ? 'Administrador' : userRole === 'operador' ? 'Operario' : userRole === 'ventas' ? 'Ventas' : 'Atención al Cliente'}
               </span>
             </div>
@@ -394,11 +393,10 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
           {tabs.map((tab) => (
             <button
               key={tab.key}
-              className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all whitespace-nowrap ${
-                adminTab === tab.key
-                  ? 'bg-primary text-white shadow-md shadow-primary/20'
-                  : 'text-secondary hover:bg-primary-light hover:text-primary'
-              }`}
+              className={`flex-1 px-4 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all whitespace-nowrap ${adminTab === tab.key
+                ? 'bg-primary text-white shadow-md shadow-primary/20'
+                : 'text-secondary hover:bg-primary-light hover:text-primary'
+                }`}
               onClick={() => handleTabChange(tab.key)}
             >
               {tab.label}
@@ -422,14 +420,14 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
           <AlertasView alertasLoading={alertasLoading} alertas={alertas} fetchAlertas={fetchAlertas} setAlertas={setAlertas} />
         )}
         {adminTab === 'lotes' && (
-          <LotesView 
-            lotes={lotes} 
-            productos={productos} 
+          <LotesView
+            lotes={lotes}
+            productos={productos}
             maquinas={maquinas}
             usuarios={usuarios}
             userRole={userRole}
-            loading={lotesLoading} 
-            fetchLotes={fetchLotes} 
+            loading={lotesLoading}
+            fetchLotes={fetchLotes}
             fetchProductos={fetchProductos}
           />
         )}
@@ -492,13 +490,12 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
                         <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalProducido} uds.</td>
                         <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalVendido} uds.</td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${
-                            item.stockDisponible > 20
-                              ? 'bg-green-50 text-green-700 border border-green-200'
-                              : item.stockDisponible > 0
+                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${item.stockDisponible > 20
+                            ? 'bg-green-50 text-green-700 border border-green-200'
+                            : item.stockDisponible > 0
                               ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
                               : 'bg-red-50 text-red-700 border border-red-200'
-                          }`}>
+                            }`}>
                             {item.stockDisponible} uds.
                           </span>
                         </td>
