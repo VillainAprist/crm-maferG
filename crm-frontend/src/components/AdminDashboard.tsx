@@ -432,8 +432,6 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
             evaluaciones={evaluaciones}
             evaluacionesLoading={evaluacionesLoading}
             fetchEvaluaciones={fetchEvaluaciones}
-            cupones={cupones}
-            fetchCupones={fetchCupones}
           />
         )}
         {adminTab === 'alertas' && (userRole === 'admin' || userRole === 'soporte') && (

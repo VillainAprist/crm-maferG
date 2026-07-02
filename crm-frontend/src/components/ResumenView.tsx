@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { KpiCard } from './KpiCard'
-import type { ResumenData, Evaluacion, Cupon } from '../types'
+import type { ResumenData, Evaluacion } from '../types'
 import { EvaluacionesView } from './EvaluacionesView'
 
 export function ResumenView({
@@ -9,9 +9,7 @@ export function ResumenView({
   fetchResumen,
   evaluaciones,
   evaluacionesLoading,
-  fetchEvaluaciones,
-  cupones,
-  fetchCupones
+  fetchEvaluaciones
 }: {
   loadingAdmin: boolean
   resumenData: ResumenData | null
@@ -19,8 +17,6 @@ export function ResumenView({
   evaluaciones: Evaluacion[]
   evaluacionesLoading: boolean
   fetchEvaluaciones: () => void
-  cupones: Cupon[]
-  fetchCupones: () => void
 }) {
   const [subTab, setSubTab] = useState<'opiniones' | 'eventos'>('opiniones')
   const [segmentoFiltro, setSegmentoFiltro] = useState<'TODOS' | 'B2B' | 'B2C'>('TODOS')

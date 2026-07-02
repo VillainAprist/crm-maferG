@@ -61,7 +61,7 @@ export type ResumenData = {
   ultimosEventos: Evento[]
 }
 
-export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario' | 'trabajadores' | 'catalogo'
+export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario' | 'trabajadores' | 'catalogo' | 'recursos'
 
 export type PantallaPublica = 'token-invalido' | 'bienvenida' | 'encuesta' | 'promotor' | 'detractor' | 'pasivo'
 
