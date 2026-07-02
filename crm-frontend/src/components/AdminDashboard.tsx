@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ResumenData, Alerta, Cupon, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../types'
+import type { ResumenData, Alerta, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../types'
 import { ResumenView } from './ResumenView'
 import { AlertasView } from './AlertasView'
 import { LotesView } from './LotesView'
