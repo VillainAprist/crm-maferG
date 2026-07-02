@@ -1,3 +1,4 @@
+// MAFER-G CRM Admin Dashboard - Vercel redeploy trigger
 import { useState } from 'react'
 import type { ResumenData, Alerta, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../types'
 import { ResumenView } from './ResumenView'
