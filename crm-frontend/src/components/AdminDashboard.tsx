@@ -17,7 +17,6 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   const [adminTab, setAdminTab] = useState<AdminTab>('resumen')
   const [resumenData, setResumenData] = useState<ResumenData | null>(null)
   const [alertas, setAlertas] = useState<Alerta[]>([])
-  const [cupones, setCupones] = useState<Cupon[]>([])
   const [lotes, setLotes] = useState<Lote[]>([])
   const [productos, setProductos] = useState<Producto[]>([])
   const [maquinas, setMaquinas] = useState<Maquina[]>([])
@@ -104,7 +103,6 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     setPinError('')
     setResumenData(null)
     setAlertas([])
-    setCupones([])
     setLotes([])
     setProductos([])
     setMaquinas([])
@@ -231,19 +229,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     setAlertasLoading(false)
   }
 
-  async function fetchCupones() {
-    try {
-      const res = await fetch(`${API_BASE}/api/nps/admin/cupones`)
-      if (res.ok) {
-        const data = (await res.json()) as Cupon[]
-        setCupones(data)
-        return
-      }
-    } catch {
-      // Backend no disponible
-    }
-    setCupones([])
-  }
+  // fetchCupones removido de la vista de administración
 
   async function fetchLotes() {
     setLotesLoading(true)
@@ -294,7 +280,6 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     if (tab === 'resumen') {
       fetchResumen()
       fetchEvaluaciones()
-      fetchCupones()
     }
     if (tab === 'alertas' && alertas.length === 0) fetchAlertas()
     if (tab === 'lotes') {
