@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import type { Lote, Venta, Cliente, ResumenVentas } from '../types'
 import { API_BASE } from '../config'
 
@@ -10,6 +10,7 @@ interface VentasViewProps {
   fetchVentas: () => Promise<void>
   fetchLotes: () => Promise<void>
   fetchClientes: () => Promise<void>
+  isAdmin?: boolean
 }
 
 function formatSoles(n?: number | null) {
@@ -24,9 +25,10 @@ export function VentasView({
   loading,
   fetchVentas,
   fetchLotes,
-  fetchClientes
+  fetchClientes,
+  isAdmin = false
 }: VentasViewProps) {
-  const [vistaActiva, setVistaActiva] = useState<'pos' | 'analisis'>('pos')
+  const [vistaActiva, setVistaActiva] = useState<'pos' | 'analisis'>(isAdmin ? 'analisis' : 'pos')
 
   // POS Form States
   const [idLote, setIdLote] = useState<number | ''>('')
@@ -58,6 +60,12 @@ export function VentasView({
   const [resumenVentas, setResumenVentas] = useState<ResumenVentas | null>(null)
   const [loadingAnalisis, setLoadingAnalisis] = useState(false)
 
+  useEffect(() => {
+    if (isAdmin && !resumenVentas) {
+      fetchAnalisis()
+    }
+  }, [isAdmin])
+
   // Derived calculations
   const loteSeleccionado = lotes.find((l) => l.idLote === Number(idLote))
   const stockMax = loteSeleccionado ? loteSeleccionado.stock : 0
@@ -66,6 +74,8 @@ export function VentasView({
   const cantidadUnidades = unidadVenta === 'DOCENA'
     ? (cantidadInput !== '' ? Number(cantidadInput) * 12 : 0)
     : (cantidadInput !== '' ? Number(cantidadInput) : 0)
+
+  const stockInsuficiente = cantidadUnidades > stockMax && !!idLote && cantidadInput !== '' && Number(cantidadInput) > 0
 
   const descuentoPct = cuponEstado === 'valido' ? 15 : 0
   const subtotal = precioUnitario !== '' ? Number(precioUnitario) * (unidadVenta === 'DOCENA' ? Number(cantidadInput) || 0 : cantidadUnidades) : 0
@@ -260,25 +270,33 @@ export function VentasView({
       {/* Header con toggle POS / Análisis */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left">
         <div>
-          <h2 className="text-lg font-extrabold text-primary">Ventas & Punto de Venta</h2>
-          <p className="text-xs text-secondary mt-0.5">Registra ventas por unidades o docenas. El sistema genera QR de encuesta automáticamente.</p>
+          <h2 className="text-lg font-extrabold text-primary">
+            {isAdmin ? 'Reporte & Análisis de Ventas' : 'Ventas & Punto de Venta'}
+          </h2>
+          <p className="text-xs text-secondary mt-0.5">
+            {isAdmin 
+              ? 'Análisis comercial, facturación histórica y estadísticas de rendimiento.' 
+              : 'Registra ventas por unidades o docenas. El sistema genera QR de encuesta automáticamente.'}
+          </p>
         </div>
-        <div className="flex items-center gap-1 bg-primary-light p-1 rounded-xl border border-border-primary shadow-sm self-start">
-          <button
-            type="button"
-            onClick={() => setVistaActiva('pos')}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${vistaActiva === 'pos' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
-          >
-            🧾 POS
-          </button>
-          <button
-            type="button"
-            onClick={() => { setVistaActiva('analisis'); if (!resumenVentas) fetchAnalisis() }}
-            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${vistaActiva === 'analisis' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
-          >
-            📊 Análisis
-          </button>
-        </div>
+        {!isAdmin && (
+          <div className="flex items-center gap-1 bg-primary-light p-1 rounded-xl border border-border-primary shadow-sm self-start">
+            <button
+              type="button"
+              onClick={() => setVistaActiva('pos')}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${vistaActiva === 'pos' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
+            >
+              🧾 POS
+            </button>
+            <button
+              type="button"
+              onClick={() => { setVistaActiva('analisis'); if (!resumenVentas) fetchAnalisis() }}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${vistaActiva === 'analisis' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
+            >
+              📊 Análisis
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Modal de venta registrada */}
@@ -405,14 +423,23 @@ export function VentasView({
                   type="number"
                   required
                   min={1}
-                  max={unidadVenta === 'DOCENA' ? stockDocenas || 1 : stockMax || 1}
+                  max={unidadVenta === 'DOCENA' ? (stockDocenas > 0 ? stockDocenas : 999) : (stockMax > 0 ? stockMax : 999)}
                   value={cantidadInput}
                   onChange={(e) => setCantidadInput(e.target.value !== '' ? Number(e.target.value) : '')}
-                  className="border border-border-primary rounded-xl px-3 py-2.5 text-sm text-primary bg-white focus:outline-none focus:ring-1 focus:ring-accent"
+                  className={`border rounded-xl px-3 py-2.5 text-sm text-primary bg-white focus:outline-none focus:ring-1 ${
+                    stockInsuficiente
+                      ? 'border-red-400 focus:ring-red-400 bg-red-50'
+                      : 'border-border-primary focus:ring-accent'
+                  }`}
                 />
-                {cantidadInput !== '' && Number(cantidadInput) > 0 && (
+                {cantidadInput !== '' && Number(cantidadInput) > 0 && !stockInsuficiente && (
                   <span className="text-[10px] text-accent-dark font-bold">
                     = {cantidadUnidades} unidades totales
+                  </span>
+                )}
+                {stockInsuficiente && (
+                  <span className="text-[10px] text-red-600 font-bold flex items-center gap-1">
+                    ⚠️ Stock insuficiente. Máx: {unidadVenta === 'DOCENA' ? `${stockDocenas} doc (${stockMax} uds)` : `${stockMax} uds`}
                   </span>
                 )}
               </label>
@@ -559,7 +586,7 @@ export function VentasView({
             <div className="flex justify-end pt-1">
               <button
                 type="submit"
-                disabled={registrando || !idLote || !cantidadInput || precioUnitario === ''}
+                disabled={registrando || !idLote || !cantidadInput || precioUnitario === '' || stockInsuficiente}
                 className="px-6 py-3 rounded-full bg-primary text-white text-xs font-bold hover:bg-primary-hover cursor-pointer disabled:opacity-50 transition-all shadow-sm"
               >
                 {registrando ? 'Procesando...' : 'Registrar Venta & Generar QR'}

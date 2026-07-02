@@ -3,8 +3,9 @@ import type { ResumenData, Alerta, Cupon, AdminTab, Lote, Producto, Evaluacion, 
 import { ResumenView } from './ResumenView'
 import { AlertasView } from './AlertasView'
 import { LotesView } from './LotesView'
-import { MaquinasView } from './MaquinasView'
 import { VentasView } from './VentasView'
+import { CatalogoAdminView } from './CatalogoAdminView'
+import { RecursosView } from './RecursosView'
 import { API_BASE } from '../config'
 
 export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdminMode: (mode: boolean) => void; onNavigateToCatalog: () => void }) {
@@ -32,6 +33,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   const [alertasLoading, setAlertasLoading] = useState(false)
   const [lotesLoading, setLotesLoading] = useState(false)
   const [maquinasLoading, setMaquinasLoading] = useState(false)
+  const [usuariosLoading, setUsuariosLoading] = useState(false)
   const [evaluacionesLoading, setEvaluacionesLoading] = useState(false)
   const [ventasLoading, setVentasLoading] = useState(false)
   const [inventarioLoading, setInventarioLoading] = useState(false)
@@ -39,10 +41,10 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   const tabs: { key: AdminTab; label: string }[] = userRole === 'admin' ? [
     { key: 'resumen', label: 'Resumen' },
     { key: 'alertas', label: 'Alertas' },
-    { key: 'lotes', label: 'Lotes' },
-    { key: 'maquinas', label: 'Máquinas' },
-    { key: 'ventas', label: 'Ventas (POS)' },
     { key: 'inventario', label: 'Inventario General' },
+    { key: 'ventas', label: 'Reporte de Ventas' },
+    { key: 'catalogo', label: 'Gestionar Catálogo' },
+    { key: 'recursos', label: 'Recursos' },
   ] : []
 
   function handleLogin() {
@@ -171,6 +173,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   }
 
   async function fetchUsuarios() {
+    setUsuariosLoading(true)
     try {
       const res = await fetch(`${API_BASE}/api/nps/admin/usuarios`)
       if (res.ok) {
@@ -179,6 +182,8 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
       }
     } catch (e) {
       console.error(e)
+    } finally {
+      setUsuariosLoading(false)
     }
   }
 
@@ -446,11 +451,14 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
             fetchProductos={fetchProductos}
           />
         )}
-        {adminTab === 'maquinas' && userRole === 'admin' && (
-          <MaquinasView
+        {adminTab === 'recursos' && userRole === 'admin' && (
+          <RecursosView
             maquinas={maquinas}
-            loading={maquinasLoading}
+            maquinasLoading={maquinasLoading}
             fetchMaquinas={fetchMaquinas}
+            usuarios={usuarios}
+            usuariosLoading={usuariosLoading}
+            fetchUsuarios={fetchUsuarios}
           />
         )}
         {adminTab === 'ventas' && (userRole === 'admin' || userRole === 'ventas') && (
@@ -462,6 +470,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
             fetchVentas={fetchVentas}
             fetchLotes={fetchLotes}
             fetchClientes={fetchClientes}
+            isAdmin={userRole === 'admin'}
           />
         )}
         {adminTab === 'inventario' && userRole === 'admin' && (
@@ -518,6 +527,12 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
               </div>
             )}
           </div>
+        )}
+        {adminTab === 'catalogo' && userRole === 'admin' && (
+          <CatalogoAdminView
+            productos={productos}
+            fetchProductos={fetchProductos}
+          />
         )}
       </div>
     </div>

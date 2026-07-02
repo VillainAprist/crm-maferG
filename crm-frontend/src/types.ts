@@ -61,7 +61,7 @@ export type ResumenData = {
   ultimosEventos: Evento[]
 }
 
-export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario'
+export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario' | 'trabajadores' | 'catalogo'
 
 export type PantallaPublica = 'token-invalido' | 'bienvenida' | 'encuesta' | 'promotor' | 'detractor' | 'pasivo'
 
@@ -70,6 +70,11 @@ export type Producto = {
   sku: string
   nombrePrenda: string
   categoriaInfantil: string
+  descripcion?: string | null
+  precio?: number
+  material?: string | null
+  cuidados?: string | null
+  imagenUrl?: string | null
 }
 
 export type Maquina = {
@@ -127,6 +132,7 @@ export type Lote = {
   codigoMaquina?: string | null
   nombreMaquina?: string | null
   stock: number
+  estado: string
 }
 
 export type LoteResumen = {

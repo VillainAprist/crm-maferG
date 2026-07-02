@@ -441,4 +441,29 @@ public class NpsPublicService {
             default -> "Gracias por tu evaluacion. Seguimos mejorando nuestros productos.";
         };
     }
+
+    public List<ProductoDto> obtenerProductosPublicos() {
+        List<ProductoDto> productos = new ArrayList<>();
+        String sql = "SELECT id_producto, sku, nombre_prenda, categoria_infantil, descripcion, precio, material, cuidados, imagen_url FROM producto ORDER BY nombre_prenda ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                productos.add(new ProductoDto(
+                        rs.getLong("id_producto"),
+                        rs.getString("sku"),
+                        rs.getString("nombre_prenda"),
+                        rs.getString("categoria_infantil"),
+                        rs.getString("descripcion"),
+                        rs.getDouble("precio"),
+                        rs.getString("material"),
+                        rs.getString("cuidados"),
+                        rs.getString("imagen_url")
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar productos publicos: " + e.getMessage(), e);
+        }
+        return productos;
+    }
 }

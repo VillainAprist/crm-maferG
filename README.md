@@ -48,8 +48,8 @@ El proyecto está diseñado bajo un enfoque modular y arquitectura desacoplada:
 El modelo de datos cumple rigurosamente con la **Tercera Forma Normal (3FN)**, eliminando dependencias transitivas y estructurándose en 5 módulos clave:
 
 1.  **Seguridad y Auditoría:** `rol`, `usuario`, `sesion_usuario`, `log_sistema`.
-2.  **Catálogo y Producción:** `categoria_producto`, `producto`, `lote_produccion`.
-3.  **Trazabilidad Física e Insumos:** `tipo_maquina`, `maquina`, `lote_proceso`, `proveedor`, `tipo_insumo`, `insumo_textil`, `lote_insumo`.
+2.  **Operaciones:** `categoria_producto`, `producto`, `tipo_operacion`, `lote_produccion` (con ciclo de vida de creación: `REGISTRADO`, `EN_PROCESO`, `TERMINADO`), `lote_proceso`, `insumo_textil`.
+3.  **Trazabilidad Física e Insumos (Logística):** `tipo_maquina`, `maquina`, `proveedor`, `lote_insumo`.
 4.  **Ubicación y Clientes (Patrón Herencia):** `departamento`, `provincia`, `distrito` (Ubigeo normalizado), `cliente`, `cliente_b2b`, `cliente_b2c`.
 5.  **Transacciones y Fidelización (CRM):** `venta`, `detalle_venta`, `evaluacion_nps`, `alerta_calidad`, `historial_alerta`, `campana_marketing`, `cupon_fidelizacion`, `historial_reconocimiento`.
 

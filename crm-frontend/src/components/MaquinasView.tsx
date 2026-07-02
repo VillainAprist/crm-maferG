@@ -55,6 +55,24 @@ export function MaquinasView({ maquinas, loading, fetchMaquinas }: MaquinasViewP
     }
   }
 
+  const [toggling, setToggling] = useState<number | null>(null)
+  async function handleToggleMaquina(id: number) {
+    if (toggling !== null) return
+    setToggling(id)
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/maquinas/${id}/toggle`, {
+        method: 'POST'
+      })
+      if (res.ok) {
+        await fetchMaquinas()
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setToggling(null)
+    }
+  }
+
   return (
     <div className="space-y-6 animate-fadeIn">
       <div>
@@ -142,10 +160,21 @@ export function MaquinasView({ maquinas, loading, fetchMaquinas }: MaquinasViewP
               >
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold bg-[#e8fff5] text-[#1c4a3f] px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold bg-[#e8fff5] text-[#1c4a3f] px-2 py-0.5 rounded-full font-mono">
                       {maq.codigoMaquina}
                     </span>
-                    <span className={`w-2 h-2 rounded-full ${maq.activo ? 'bg-green-500' : 'bg-red-400'}`} />
+                    <button
+                      onClick={() => handleToggleMaquina(maq.idMaquina)}
+                      disabled={toggling !== null}
+                      type="button"
+                      className={`text-[9px] font-bold px-2.5 py-1.5 rounded-xl border transition-all cursor-pointer shadow-xs ${
+                        maq.activo
+                          ? 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+                          : 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
+                      }`}
+                    >
+                      {toggling === maq.idMaquina ? '...' : maq.activo ? 'Desactivar 🛑' : 'Activar ⚡'}
+                    </button>
                   </div>
                   <h4 className="text-sm font-bold text-[#16342d] mt-2">
                     {maq.nombreMaquina}

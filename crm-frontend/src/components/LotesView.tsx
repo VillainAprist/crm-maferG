@@ -333,12 +333,12 @@ export function LotesView({
     <div className="space-y-6 animate-fadeIn">
       <div className="text-left">
         <h2 className="text-lg font-extrabold text-primary">
-          {userRole === 'operador' ? 'Trazabilidad y Bitácora de Confección' : 'Gestión de Lotes de Producción'}
+          {userRole === 'operador' ? 'Trazabilidad y Bitácora de Confección' : 'Control de Operaciones y Lotes'}
         </h2>
         <p className="text-xs text-secondary mt-1">
           {userRole === 'operador'
             ? 'Registra las operaciones realizadas (Corte, Costura, Remalle) e indica qué operario y qué máquina participaron.'
-            : 'Registra los lotes confeccionados en el taller y realiza el seguimiento del stock y bitácoras.'}
+            : 'Registra los lotes confeccionados en el taller y realiza el seguimiento de las operaciones, stock y bitácoras.'}
         </p>
       </div>
 
@@ -559,6 +559,15 @@ export function LotesView({
                       <div className="flex items-center gap-2">
                         <span className="inline-block text-[10px] font-extrabold bg-accent-light text-accent-dark px-2.5 py-0.5 rounded-full border border-[#cce2db] font-mono">
                           {lote.codigoLote}
+                        </span>
+                        <span className={`inline-block text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border tracking-wide uppercase ${
+                          lote.estado === 'TERMINADO'
+                            ? 'bg-green-50 text-green-700 border-green-200'
+                            : lote.estado === 'EN_PROCESO'
+                            ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            : 'bg-gray-50 text-gray-500 border-gray-200'
+                        }`}>
+                          {lote.estado === 'TERMINADO' ? '🟢 Terminado' : lote.estado === 'EN_PROCESO' ? '🟡 En Proceso' : '⚪ Registrado'}
                         </span>
                         <span className="text-[10px] text-gray-400 font-medium">Registrado: {lote.fechaConfeccion}</span>
                       </div>

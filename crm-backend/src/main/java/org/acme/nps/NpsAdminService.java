@@ -332,7 +332,7 @@ public class NpsAdminService {
 
     public List<ProductoDto> obtenerProductos() {
         List<ProductoDto> productos = new ArrayList<>();
-        String sql = "SELECT id_producto, sku, nombre_prenda, categoria_infantil FROM producto ORDER BY nombre_prenda ASC";
+        String sql = "SELECT id_producto, sku, nombre_prenda, categoria_infantil, descripcion, precio, material, cuidados, imagen_url FROM producto ORDER BY nombre_prenda ASC";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
@@ -341,7 +341,12 @@ public class NpsAdminService {
                         rs.getLong("id_producto"),
                         rs.getString("sku"),
                         rs.getString("nombre_prenda"),
-                        rs.getString("categoria_infantil")
+                        rs.getString("categoria_infantil"),
+                        rs.getString("descripcion"),
+                        rs.getDouble("precio"),
+                        rs.getString("material"),
+                        rs.getString("cuidados"),
+                        rs.getString("imagen_url")
                 ));
             }
         } catch (Exception e) {
@@ -371,15 +376,16 @@ public class NpsAdminService {
             }
 
             long idProducto;
-            String sqlInsert = "INSERT INTO producto (sku, nombre_prenda, categoria_infantil) VALUES (?, ?, ?)";
+            String sqlInsert = "INSERT INTO producto (sku, nombre_prenda, categoria_infantil, descripcion, precio, material, cuidados, imagen_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 ps.setString(1, request.sku().trim());
                 ps.setString(2, request.nombrePrenda().trim());
-                if (request.categoriaInfantil() != null && !request.categoriaInfantil().trim().isEmpty()) {
-                    ps.setString(3, request.categoriaInfantil().trim());
-                } else {
-                    ps.setNull(3, java.sql.Types.VARCHAR);
-                }
+                ps.setString(3, request.categoriaInfantil() != null && !request.categoriaInfantil().trim().isEmpty() ? request.categoriaInfantil().trim() : null);
+                ps.setString(4, request.descripcion() != null && !request.descripcion().trim().isEmpty() ? request.descripcion().trim() : null);
+                ps.setDouble(5, request.precio());
+                ps.setString(6, request.material() != null && !request.material().trim().isEmpty() ? request.material().trim() : null);
+                ps.setString(7, request.cuidados() != null && !request.cuidados().trim().isEmpty() ? request.cuidados().trim() : null);
+                ps.setString(8, request.imagenUrl() != null && !request.imagenUrl().trim().isEmpty() ? request.imagenUrl().trim() : null);
                 ps.executeUpdate();
                 try (ResultSet rs = ps.getGeneratedKeys()) {
                     if (rs.next()) {
@@ -390,7 +396,7 @@ public class NpsAdminService {
                 }
             }
 
-            return new ProductoDto(idProducto, request.sku().trim(), request.nombrePrenda().trim(), request.categoriaInfantil());
+            return new ProductoDto(idProducto, request.sku().trim(), request.nombrePrenda().trim(), request.categoriaInfantil(), request.descripcion(), request.precio(), request.material(), request.cuidados(), request.imagenUrl());
         } catch (Exception e) {
             if (e instanceof IllegalArgumentException) {
                 throw (IllegalArgumentException) e;
@@ -399,10 +405,38 @@ public class NpsAdminService {
         }
     }
 
+    @Transactional
+    public ProductoDto actualizarProducto(long id, ProductoDto request) {
+        if (request.nombrePrenda() == null || request.nombrePrenda().trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre de la prenda es obligatorio.");
+        }
+
+        String sql = "UPDATE producto SET nombre_prenda = ?, categoria_infantil = ?, descripcion = ?, precio = ?, material = ?, cuidados = ?, imagen_url = ? WHERE id_producto = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, request.nombrePrenda().trim());
+            ps.setString(2, request.categoriaInfantil() != null && !request.categoriaInfantil().trim().isEmpty() ? request.categoriaInfantil().trim() : null);
+            ps.setString(3, request.descripcion() != null && !request.descripcion().trim().isEmpty() ? request.descripcion().trim() : null);
+            ps.setDouble(4, request.precio());
+            ps.setString(5, request.material() != null && !request.material().trim().isEmpty() ? request.material().trim() : null);
+            ps.setString(6, request.cuidados() != null && !request.cuidados().trim().isEmpty() ? request.cuidados().trim() : null);
+            ps.setString(7, request.imagenUrl() != null && !request.imagenUrl().trim().isEmpty() ? request.imagenUrl().trim() : null);
+            ps.setLong(8, id);
+
+            int affected = ps.executeUpdate();
+            if (affected == 0) {
+                throw new IllegalArgumentException("No se encontró el producto con ID " + id);
+            }
+            return new ProductoDto(id, request.sku(), request.nombrePrenda(), request.categoriaInfantil(), request.descripcion(), request.precio(), request.material(), request.cuidados(), request.imagenUrl());
+        } catch (Exception e) {
+            throw new RuntimeException("Error al actualizar producto: " + e.getMessage(), e);
+        }
+    }
+
     public List<LoteDto> obtenerLotes() {
         List<LoteDto> lotes = new ArrayList<>();
         String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
-                     "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
+                     "l.id_maquina, m.codigo_maquina, m.nombre_maquina, l.estado, " +
                      "(l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock " +
                      "FROM lote_produccion l " +
                      "JOIN producto p ON l.id_producto = p.id_producto " +
@@ -431,7 +465,8 @@ public class NpsAdminService {
                         idMaquina,
                         codigoMaquina,
                         nombreMaquina,
-                        stock
+                        stock,
+                        rs.getString("estado")
                 ));
             }
         } catch (Exception e) {
@@ -473,7 +508,7 @@ public class NpsAdminService {
 
             // Insertar Lote
             long idLote;
-            String sqlInsert = "INSERT INTO lote_produccion (id_producto, id_usuario, id_maquina, codigo_lote, token_qr, fecha_confeccion, cantidad) VALUES (?, ?, ?, ?, ?, now(), ?)";
+            String sqlInsert = "INSERT INTO lote_produccion (id_producto, id_usuario, id_maquina, codigo_lote, token_qr, fecha_confeccion, cantidad, estado) VALUES (?, ?, ?, ?, ?, now(), ?, 'REGISTRADO')";
             try (PreparedStatement ps = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 ps.setLong(1, request.idProducto());
                 ps.setLong(2, idUsuario);
@@ -497,7 +532,7 @@ public class NpsAdminService {
 
             // Devolver Lote creado
             String sqlSelect = "SELECT l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
-                               "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
+                               "l.id_maquina, m.codigo_maquina, m.nombre_maquina, l.estado, " +
                                "l.cantidad as stock " +
                                "FROM lote_produccion l " +
                                "JOIN producto p ON l.id_producto = p.id_producto " +
@@ -526,7 +561,8 @@ public class NpsAdminService {
                                 idMaquina,
                                 codigoMaquina,
                                 nombreMaquina,
-                                stock
+                                stock,
+                                rs.getString("estado")
                         );
                     } else {
                         throw new NpsException("Lote creado no encontrado.");
@@ -534,10 +570,10 @@ public class NpsAdminService {
                 }
             }
         } catch (Exception e) {
-            if (e instanceof NpsException || e instanceof IllegalArgumentException) {
-                throw new RuntimeException(e.getMessage(), e);
+            if (e instanceof IllegalArgumentException) {
+                throw (IllegalArgumentException) e;
             }
-            throw new RuntimeException("Error al registrar lote en base de datos: " + e.getMessage(), e);
+            throw new RuntimeException("Error al registrar lote: " + e.getMessage(), e);
         }
     }
 
@@ -614,10 +650,11 @@ public class NpsAdminService {
     public List<LoteProcesoDto> obtenerProcesosPorLote(long idLote) {
         List<LoteProcesoDto> procesos = new ArrayList<>();
         String sql = "SELECT lp.id_proceso, lp.id_lote, lp.id_usuario, u.nombres as nombre_operador, " +
-                     "lp.id_maquina, m.codigo_maquina, m.nombre_maquina, lp.operacion, lp.fecha_registro " +
+                     "lp.id_maquina, m.codigo_maquina, m.nombre_maquina, t_op.nombre as operacion, lp.fecha_registro " +
                      "FROM lote_proceso lp " +
                      "JOIN usuario u ON lp.id_usuario = u.id_usuario " +
                      "LEFT JOIN maquina m ON lp.id_maquina = m.id_maquina " +
+                     "JOIN tipo_operacion t_op ON lp.id_tipo_operacion = t_op.id_tipo_operacion " +
                      "WHERE lp.id_lote = ? " +
                      "ORDER BY lp.id_proceso ASC";
         try (Connection conn = dataSource.getConnection();
@@ -648,7 +685,22 @@ public class NpsAdminService {
 
     @Transactional
     public LoteProcesoDto registrarProceso(long idLote, LoteProcesoDto request) {
-        String sql = "INSERT INTO lote_proceso (id_lote, id_usuario, id_maquina, operacion) VALUES (?, ?, ?, ?) RETURNING id_proceso, fecha_registro";
+        // Buscar el id_tipo_operacion correspondiente
+        long idTipoOperacion = 1; // Por defecto OP-CORTE
+        String sqlFindOp = "SELECT id_tipo_operacion FROM tipo_operacion WHERE LOWER(nombre) = LOWER(?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement psFind = conn.prepareStatement(sqlFindOp)) {
+            psFind.setString(1, request.operacion());
+            try (ResultSet rsFind = psFind.executeQuery()) {
+                if (rsFind.next()) {
+                    idTipoOperacion = rsFind.getLong(1);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("No se pudo mapear la operacion " + request.operacion() + ": " + e.getMessage());
+        }
+
+        String sql = "INSERT INTO lote_proceso (id_lote, id_usuario, id_maquina, id_tipo_operacion, operacion) VALUES (?, ?, ?, ?, ?) RETURNING id_proceso, fecha_registro";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, idLote);
@@ -658,12 +710,29 @@ public class NpsAdminService {
             } else {
                 ps.setNull(3, java.sql.Types.BIGINT);
             }
-            ps.setString(4, request.operacion());
+            ps.setLong(4, idTipoOperacion);
+            ps.setString(5, request.operacion());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     long id = rs.getLong(1);
                     java.sql.Timestamp ts = rs.getTimestamp(2);
                     String fecha = ts != null ? ts.toInstant().toString().substring(0, 16).replace("T", " ") : "";
+                    
+                    // Actualizar el estado del lote en la base de datos de forma automática
+                    String nuevoEstado = "EN_PROCESO";
+                    if ("acabado".equalsIgnoreCase(request.operacion().trim())) {
+                        nuevoEstado = "TERMINADO";
+                    }
+                    String sqlUpdateLote = "UPDATE lote_produccion SET estado = ? WHERE id_lote = ? AND (estado != 'TERMINADO' OR ? = 'TERMINADO')";
+                    try (PreparedStatement psUp = conn.prepareStatement(sqlUpdateLote)) {
+                        psUp.setString(1, nuevoEstado);
+                        psUp.setLong(2, idLote);
+                        psUp.setString(3, nuevoEstado);
+                        psUp.executeUpdate();
+                    } catch (Exception ex) {
+                        System.err.println("No se pudo actualizar el estado del lote: " + ex.getMessage());
+                    }
+
                     return new LoteProcesoDto(id, idLote, request.idUsuario(), "", request.idMaquina(), "", "", request.operacion(), fecha);
                 }
                 throw new NpsException("No se pudo registrar la operación de confección.");
@@ -1018,5 +1087,69 @@ public class NpsAdminService {
             throw new RuntimeException("Error al consultar el inventario total: " + e.getMessage(), e);
         }
         return inventario;
+    }
+
+    @Transactional
+    public UsuarioDto registrarUsuario(UsuarioDto request) {
+        if (request.nombres() == null || request.nombres().isBlank()) {
+            throw new IllegalArgumentException("El nombre del trabajador es obligatorio.");
+        }
+        if (request.username() == null || request.username().isBlank()) {
+            throw new IllegalArgumentException("El nombre de usuario es obligatorio.");
+        }
+
+        try (Connection conn = dataSource.getConnection()) {
+            long idRol = 1; // Default fallback
+            try (PreparedStatement ps = conn.prepareStatement("SELECT id_rol FROM rol WHERE nombre_rol = 'OPERADOR' LIMIT 1")) {
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        idRol = rs.getLong("id_rol");
+                    }
+                }
+            }
+
+            String sql = "INSERT INTO usuario (id_rol, nombres, username, password_hash, activo) VALUES (?, ?, ?, ?, ?) RETURNING id_usuario";
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setLong(1, idRol);
+                ps.setString(2, request.nombres().trim());
+                ps.setString(3, request.username().trim().toLowerCase());
+                ps.setString(4, "operador-hash");
+                ps.setBoolean(5, request.activo());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        long id = rs.getLong(1);
+                        return new UsuarioDto(id, request.nombres().trim(), request.username().trim().toLowerCase(), request.activo());
+                    } else {
+                        throw new NpsException("Error al generar ID para el trabajador.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al registrar trabajador: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public void toggleMaquinaActivo(long idMaquina) {
+        String sql = "UPDATE maquina SET activo = NOT activo WHERE id_maquina = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idMaquina);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al cambiar estado de la máquina: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public void toggleUsuarioActivo(long idUsuario) {
+        String sql = "UPDATE usuario SET activo = NOT activo WHERE id_usuario = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idUsuario);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al cambiar estado del trabajador: " + e.getMessage(), e);
+        }
     }
 }

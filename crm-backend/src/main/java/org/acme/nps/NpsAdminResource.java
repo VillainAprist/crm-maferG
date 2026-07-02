@@ -151,6 +151,20 @@ public class NpsAdminResource {
         }
     }
 
+    @PUT
+    @Path("/productos/{id}")
+    public Response actualizarProducto(@PathParam("id") long id, ProductoDto request) {
+        try {
+            ProductoDto dto = npsAdminService.actualizarProducto(id, request);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
+
+
     @GET
     @Path("/lotes")
     public List<LoteDto> obtenerLotes() {
@@ -189,10 +203,45 @@ public class NpsAdminResource {
         }
     }
 
+    @POST
+    @Path("/maquinas/{id}/toggle")
+    public Response toggleMaquinaActivo(@PathParam("id") long id) {
+        try {
+            npsAdminService.toggleMaquinaActivo(id);
+            return Response.ok().build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
+    }
+
     @GET
     @Path("/usuarios")
     public List<UsuarioDto> obtenerUsuarios() {
         return npsAdminService.obtenerUsuarios();
+    }
+
+    @POST
+    @Path("/usuarios")
+    public Response registrarUsuario(UsuarioDto request) {
+        try {
+            UsuarioDto dto = npsAdminService.registrarUsuario(request);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
+
+    @POST
+    @Path("/usuarios/{id}/toggle")
+    public Response toggleUsuarioActivo(@PathParam("id") long id) {
+        try {
+            npsAdminService.toggleUsuarioActivo(id);
+            return Response.ok().build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(e.getMessage()).build();
+        }
     }
 
     @GET

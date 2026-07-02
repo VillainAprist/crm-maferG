@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { KpiCard } from './KpiCard'
 import type { ResumenData, Evaluacion, Cupon } from '../types'
 import { EvaluacionesView } from './EvaluacionesView'
-import { CuponesView } from './CuponesView'
 
 export function ResumenView({
   loadingAdmin,
@@ -23,7 +22,7 @@ export function ResumenView({
   cupones: Cupon[]
   fetchCupones: () => void
 }) {
-  const [subTab, setSubTab] = useState<'opiniones' | 'cupones' | 'eventos'>('opiniones')
+  const [subTab, setSubTab] = useState<'opiniones' | 'eventos'>('opiniones')
   const [segmentoFiltro, setSegmentoFiltro] = useState<'TODOS' | 'B2B' | 'B2C'>('TODOS')
   const [fechaFiltro, setFechaFiltro] = useState<'TODO' | 'HOY' | 'SEMANA' | 'MES'>('TODO')
 
@@ -227,9 +226,9 @@ export function ResumenView({
         <KpiCard label="Promotores" value={promotores} />
       </div>
 
-      {/* Sub-pestañas locales para Opiniones, Cupones e Eventos */}
+      {/* Sub-pestañas locales para Opiniones e Eventos */}
       <div className="pt-4 border-t border-border-light">
-        <div className="flex gap-1 mb-4 bg-primary-light p-1.5 rounded-xl border border-border-light max-w-md">
+        <div className="flex gap-1 mb-4 bg-primary-light p-1.5 rounded-xl border border-border-light max-w-sm">
           <button
             onClick={() => setSubTab('opiniones')}
             className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
@@ -239,16 +238,6 @@ export function ResumenView({
             }`}
           >
             Opiniones ({evaluaciones.length})
-          </button>
-          <button
-            onClick={() => setSubTab('cupones')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              subTab === 'cupones'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-secondary hover:bg-white/50 hover:text-primary'
-            }`}
-          >
-            Cupones ({cupones.length})
           </button>
           <button
             onClick={() => setSubTab('eventos')}
@@ -271,12 +260,7 @@ export function ResumenView({
             />
           )}
 
-          {subTab === 'cupones' && (
-            <CuponesView
-              cupones={cupones}
-              fetchCupones={fetchCupones}
-            />
-          )}
+          {/* Cupones removidos de la vista estratégica */}
 
           {subTab === 'eventos' && (
             <div className="space-y-3 text-left">

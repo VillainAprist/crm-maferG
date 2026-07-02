@@ -84,4 +84,16 @@ public class NpsPublicResource {
                     .build();
         }
     }
+
+    @GET
+    @Path("/productos")
+    public Response obtenerProductosPublicos() {
+        try {
+            return Response.ok(npsPublicService.obtenerProductosPublicos()).build();
+        } catch (Exception ex) {
+            return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                    .entity(Map.of("error", ex.getMessage()))
+                    .build();
+        }
+    }
 }
