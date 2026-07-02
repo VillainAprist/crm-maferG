@@ -56,7 +56,6 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
       fetchResumen()
       fetchAlertas()
       fetchEvaluaciones()
-      fetchCupones()
       fetchLotes()
       fetchProductos()
       fetchMaquinas()
