@@ -960,7 +960,8 @@ public class NpsAdminService {
             int descuentoPct = (idCupon != -1) ? 15 : 0;
             double precioUnitario = request.precioUnitario() > 0 ? request.precioUnitario() : 0.0;
             String unidadVenta = (request.unidadVenta() != null && request.unidadVenta().equalsIgnoreCase("DOCENA")) ? "DOCENA" : "UNIDAD";
-            double montoTotal = precioUnitario * request.cantidadVendida() * (1.0 - descuentoPct / 100.0);
+            double cantidadParaMonto = unidadVenta.equals("DOCENA") ? (request.cantidadVendida() / 12.0) : request.cantidadVendida();
+            double montoTotal = precioUnitario * cantidadParaMonto * (1.0 - descuentoPct / 100.0);
             String sqlInsert = "INSERT INTO venta (id_lote, id_cliente, cantidad_vendida, token_qr, fecha_venta, precio_unitario, unidad_venta, descuento_porcentaje, monto_total) VALUES (?, ?, ?, ?, now(), ?, ?, ?, ?)";
             try (PreparedStatement ps = conn.prepareStatement(sqlInsert, java.sql.Statement.RETURN_GENERATED_KEYS)) {
                 ps.setLong(1, request.idLote());

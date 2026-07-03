@@ -214,6 +214,7 @@ export function VentasView({
             .precio-row { display: flex; justify-content: space-between; font-size: 13px; color: #2d5a50; margin: 4px 0; }
             .total-row { display: flex; justify-content: space-between; font-size: 16px; font-weight: bold; color: #1e4a40; margin-top: 8px; }
             .descuento { color: #d97706; }
+            .x12-badge { background: #e8fff5; color: #1e4a40; padding: 1px 4px; border-radius: 4px; font-weight: bold; font-size: 10px; border: 1px solid #cce2db; margin-left: 4px; }
             img { width: 160px; height: 160px; margin: 12px auto; display: block; border: 1px solid #e2ece9; border-radius: 8px; padding: 4px; background: white; }
             .instruction { font-size: 10px; color: #53796f; font-weight: bold; line-height: 1.4; text-align: center; }
             .footer-info { font-size: 10px; color: #8faea6; margin-top: 10px; text-align: center; }
@@ -229,7 +230,13 @@ export function VentasView({
             <p><strong>Lote:</strong> ${venta.codigoLote}</p>
             <div class="divider"></div>
             <div class="precio-row"><span>Cantidad:</span><span>${cantLabel}</span></div>
-            <div class="precio-row"><span>Precio${precioLabel}:</span><span>${formatSoles(venta.precioUnitario)}</span></div>
+            <div class="precio-row">
+              <span>Precio${precioLabel}:</span>
+              <span>
+                ${formatSoles(venta.precioUnitario)}
+                ${docenas ? ' <span class="x12-badge">x12</span>' : ''}
+              </span>
+            </div>
             <div class="precio-row"><span>Subtotal:</span><span>${formatSoles(subtotalTicket)}</span></div>
             ${venta.descuentoPorcentaje > 0 ? `<div class="precio-row descuento"><span>Descuento (${venta.descuentoPorcentaje}%):</span><span>- ${formatSoles(descuentoTicket)}</span></div>` : ''}
             <div class="divider"></div>
@@ -315,11 +322,17 @@ export function VentasView({
             <div className="bg-primary-light border border-border-primary rounded-2xl p-3.5 text-left space-y-1.5 text-xs">
               <div className="flex justify-between text-secondary">
                 <span>
-                  {ultimaVenta.unidadVenta === 'DOCENA'
-                    ? `${Math.floor(ultimaVenta.cantidadVendida / 12)} doc (${ultimaVenta.cantidadVendida} uds.)`
-                    : `${ultimaVenta.cantidadVendida} uds.`}
-                  {' '}× {formatSoles(ultimaVenta.precioUnitario)}
-                  {ultimaVenta.unidadVenta === 'DOCENA' ? '/doc' : '/ud'}
+                  {ultimaVenta.unidadVenta === 'DOCENA' ? (
+                    <span className="inline-flex items-center gap-1.5 flex-wrap">
+                      <span>{Math.floor(ultimaVenta.cantidadVendida / 12)} doc</span>
+                      <span className="bg-[#e8fff5] text-[#1c4a3f] px-1.5 py-0.5 rounded-md font-extrabold text-[9px] border border-[#cce2db]">
+                        x12
+                      </span>
+                      <span>({ultimaVenta.cantidadVendida} uds.) × {formatSoles(ultimaVenta.precioUnitario)}/doc</span>
+                    </span>
+                  ) : (
+                    <span>{ultimaVenta.cantidadVendida} uds. × {formatSoles(ultimaVenta.precioUnitario)}/ud</span>
+                  )}
                 </span>
                 <span className="font-bold">{formatSoles(ultimaVenta.precioUnitario * (ultimaVenta.unidadVenta === 'DOCENA' ? Math.floor(ultimaVenta.cantidadVendida / 12) : ultimaVenta.cantidadVendida))}</span>
               </div>
@@ -495,9 +508,17 @@ export function VentasView({
                 <p className="text-[10px] font-extrabold text-secondary uppercase tracking-wider mb-2">Resumen de la venta</p>
                 <div className="flex justify-between text-xs text-secondary">
                   <span>
-                    {unidadVenta === 'DOCENA'
-                      ? `${cantidadInput} doc (${cantidadUnidades} uds.) × ${formatSoles(Number(precioUnitario))}/doc`
-                      : `${cantidadInput} uds. × ${formatSoles(Number(precioUnitario))}/ud`}
+                    {unidadVenta === 'DOCENA' ? (
+                      <span className="flex items-center gap-1.5 flex-wrap">
+                        <span>{cantidadInput} doc</span>
+                        <span className="bg-[#e8fff5] text-[#1c4a3f] px-1.5 py-0.5 rounded-md font-extrabold text-[9px] border border-[#cce2db]">
+                          x12
+                        </span>
+                        <span>({cantidadUnidades} uds.) × {formatSoles(Number(precioUnitario))}/doc</span>
+                      </span>
+                    ) : (
+                      <span>{cantidadInput} uds. × {formatSoles(Number(precioUnitario))}/ud</span>
+                    )}
                   </span>
                   <span className="font-bold text-primary">{formatSoles(subtotal)}</span>
                 </div>
@@ -655,6 +676,11 @@ export function VentasView({
                           </td>
                           <td className="px-4 py-3 text-right text-secondary whitespace-nowrap">
                             {formatSoles(v.precioUnitario)}/{v.unidadVenta === 'DOCENA' ? 'doc' : 'ud'}
+                            {v.unidadVenta === 'DOCENA' && (
+                              <span className="ml-1.5 text-[9px] font-extrabold bg-[#e8fff5] text-[#1c4a3f] px-1 py-0.5 rounded border border-[#cce2db]">
+                                x12
+                              </span>
+                            )}
                             {v.descuentoPorcentaje > 0 && (
                               <span className="ml-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">-{v.descuentoPorcentaje}%</span>
                             )}
