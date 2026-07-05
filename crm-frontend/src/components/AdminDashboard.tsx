@@ -305,10 +305,15 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     return (
       <div className="w-full max-w-sm mx-auto bg-white rounded-[28px] border border-border-primary shadow-[0_16px_40px_rgba(25,52,44,0.12)] p-6 animate-scaleIn">
         <div className="text-center mb-5">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-accent-light flex items-center justify-center shadow-inner">
-            <span className="text-accent text-xl font-bold">🔒</span>
-          </div>
-          <h2 className="text-lg font-extrabold text-primary">Acceso Personal</h2>
+          <img
+            src="/maferG-logo/mafergLOGO.png"
+            alt="Logo MAFER-G"
+            className="h-16 w-auto mx-auto mb-4 object-contain"
+          />
+          <h2 className="text-lg font-extrabold text-primary flex items-center justify-center gap-1.5">
+            <span>Acceso Personal</span>
+            <span className="text-sm">🔒</span>
+          </h2>
           <p className="text-xs text-secondary mt-1">Ingresa tu código PIN de seguridad</p>
         </div>
 
@@ -353,9 +358,12 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     <div className="w-full max-w-4xl mx-auto animate-fadeIn">
       <header className="flex items-center justify-between mb-4 bg-white p-4 rounded-2xl border border-border-primary shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-accent-light flex items-center justify-center font-bold text-accent text-lg">
-            {userRole === 'admin' ? '⚙️' : userRole === 'operador' ? '🧵' : userRole === 'ventas' ? '💼' : '🎧'}
-          </div>
+          <img
+            src="/maferG-logo/mafergLOGO.png"
+            alt="Logo MAFER-G"
+            className="h-10 w-auto object-contain"
+          />
+          <div className="h-6 w-px bg-gray-200" />
           <div className="text-left">
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-extrabold text-primary">
@@ -378,7 +386,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
                 {userRole === 'admin' ? 'Administrador' : userRole === 'operador' ? 'Operario' : userRole === 'ventas' ? 'Ventas' : 'Atención al Cliente'}
               </span>
             </div>
-            <p className="text-[11px] text-secondary font-medium">MAFER-G Intelligent Connect</p>
+            <p className="text-[11px] text-secondary font-medium">CRM + Calidad Textil</p>
           </div>
         </div>
         <button

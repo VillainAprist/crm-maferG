@@ -96,9 +96,16 @@ export function CatalogoView({
           >
             ← Volver
           </button>
-          <div className="text-right">
-            <span className="text-[10px] font-bold tracking-[0.25em] text-[#555555]/60 uppercase block">MAFER-G</span>
-            <span className="text-xs font-bold text-[#555555]/80">Colección Infantil Premium</span>
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/maferG-logo/mafergLOGO.png"
+              alt="Logo MAFER-G"
+              className="h-8 w-auto object-contain"
+            />
+            <div className="text-left hidden xs:block">
+              <span className="text-[10px] font-bold tracking-[0.25em] text-[#555555]/60 uppercase block">MAFER-G</span>
+              <span className="text-xs font-bold text-[#555555]/80">Colección Infantil Premium</span>
+            </div>
           </div>
         </header>
 

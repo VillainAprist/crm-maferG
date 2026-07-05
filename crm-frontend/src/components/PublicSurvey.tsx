@@ -283,11 +283,18 @@ export function PublicSurvey({
 
   return (
     <div className="w-full max-w-md mx-auto animate-fadeIn px-4 sm:px-0">
-      <header className="mb-4 text-left">
-        <div className="text-xs font-extrabold uppercase tracking-widest text-accent">
-          MAFER-G Intelligent Connect
+      <header className="mb-4 flex items-center gap-3 text-left">
+        <img
+          src="/maferG-logo/mafergLOGO.png"
+          alt="Logo MAFER-G"
+          className="h-10 w-auto object-contain"
+        />
+        <div>
+          <div className="text-xs font-extrabold uppercase tracking-widest text-accent">
+            MAFER-G Intelligent Connect
+          </div>
+          <p className="text-sm text-secondary font-medium">CRM + Calidad Textil</p>
         </div>
-        <p className="text-sm text-secondary font-medium">CRM + Calidad Textil</p>
       </header>
 
       <div className="bg-white rounded-[28px] border border-border-primary shadow-[0_16px_40px_rgba(25,52,44,0.08)] p-6 flex flex-col gap-4 min-h-[440px] transition-all duration-300">
