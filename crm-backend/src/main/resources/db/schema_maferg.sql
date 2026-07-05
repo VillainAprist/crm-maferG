@@ -338,7 +338,13 @@ INSERT INTO tipo_operacion (codigo_operacion, nombre, tiempo_estandar_minutos) V
 ('OP-CORTE', 'Corte', 15),
 ('OP-COSTURA', 'Costura', 45),
 ('OP-REMALLE', 'Remalle', 30),
-('OP-ACABADO', 'Acabado', 20);
+('OP-RECUBIERTO', 'Recubierto/Collareta', 25),
+('OP-OJAL_BOTON', 'Ojal y Botón', 20),
+('OP-ACABADO', 'Acabado/Limpieza', 20),
+('OP-PLANCHADO', 'Planchado', 15),
+('OP-CALIDAD', 'Control de Calidad', 15),
+('OP-EMPAQUE', 'Empaque', 10);
+
 
 -- 6. Tipos de Máquina
 INSERT INTO tipo_maquina (nombre_tipo) VALUES

@@ -650,7 +650,7 @@ public class NpsAdminService {
     public List<LoteProcesoDto> obtenerProcesosPorLote(long idLote) {
         List<LoteProcesoDto> procesos = new ArrayList<>();
         String sql = "SELECT lp.id_proceso, lp.id_lote, lp.id_usuario, u.nombres as nombre_operador, " +
-                     "lp.id_maquina, m.codigo_maquina, m.nombre_maquina, t_op.nombre as operacion, lp.fecha_registro " +
+                     "lp.id_maquina, m.codigo_maquina, m.nombre_maquina, lp.operacion as operacion, lp.fecha_registro " +
                      "FROM lote_proceso lp " +
                      "JOIN usuario u ON lp.id_usuario = u.id_usuario " +
                      "LEFT JOIN maquina m ON lp.id_maquina = m.id_maquina " +
