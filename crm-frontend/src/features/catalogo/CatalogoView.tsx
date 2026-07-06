@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import type { Producto } from '../types'
-import { API_BASE } from '../config'
+import type { Producto } from '../../types'
+import { API_BASE } from '../../config'
 
 export function CatalogoView({
   onBack,

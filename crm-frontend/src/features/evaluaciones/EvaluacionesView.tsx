@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Evaluacion } from '../types'
+import type { Evaluacion } from '../../types'
 
 export function EvaluacionesView({
   evaluaciones,

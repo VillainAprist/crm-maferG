@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import type { Producto } from '../types'
-import { API_BASE } from '../config'
+import type { Producto, TarifaOperacion } from '../../types'
+import { API_BASE } from '../../config'
 
 // Extender interfaz de Window para TypeScript
 declare global {
@@ -24,6 +24,12 @@ export function CatalogoAdminView({ productos, fetchProductos }: CatalogoAdminVi
   const [cuidados, setCuidados] = useState('')
   const [imagenUrl, setImagenUrl] = useState('')
   
+  const [tarifasMap, setTarifasMap] = useState<Record<string, { tarifa: number | ''; unidadMedida: 'UNIDAD' | 'DOCENA' }>>({
+    CORTE: { tarifa: '', unidadMedida: 'DOCENA' },
+    COSTURA: { tarifa: '', unidadMedida: 'DOCENA' },
+    ACABADO: { tarifa: '', unidadMedida: 'DOCENA' }
+  })
+
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [exito, setExito] = useState('')
@@ -38,6 +44,28 @@ export function CatalogoAdminView({ productos, fetchProductos }: CatalogoAdminVi
     }
   }, [])
 
+  const fetchTarifas = async (idProd: number) => {
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/productos/${idProd}/tarifas`)
+      if (res.ok) {
+        const data: TarifaOperacion[] = await res.json()
+        const newMap = {
+          CORTE: { tarifa: '' as number | '', unidadMedida: 'DOCENA' as 'UNIDAD' | 'DOCENA' },
+          COSTURA: { tarifa: '' as number | '', unidadMedida: 'DOCENA' as 'UNIDAD' | 'DOCENA' },
+          ACABADO: { tarifa: '' as number | '', unidadMedida: 'DOCENA' as 'UNIDAD' | 'DOCENA' }
+        }
+        data.forEach(t => {
+          if (t.operacion === 'CORTE' || t.operacion === 'COSTURA' || t.operacion === 'ACABADO') {
+            newMap[t.operacion] = { tarifa: t.tarifa, unidadMedida: t.unidadMedida }
+          }
+        })
+        setTarifasMap(newMap)
+      }
+    } catch {
+      console.error('Error al cargar tarifas')
+    }
+  }
+
   // Cargar datos en el formulario al seleccionar producto
   useEffect(() => {
     if (productoSeleccionado) {
@@ -48,12 +76,18 @@ export function CatalogoAdminView({ productos, fetchProductos }: CatalogoAdminVi
       setImagenUrl(productoSeleccionado.imagenUrl || '')
       setError('')
       setExito('')
+      fetchTarifas(productoSeleccionado.id)
     } else {
       setDescripcion('')
       setPrecio('')
       setMaterial('')
       setCuidados('')
       setImagenUrl('')
+      setTarifasMap({
+        CORTE: { tarifa: '', unidadMedida: 'DOCENA' },
+        COSTURA: { tarifa: '', unidadMedida: 'DOCENA' },
+        ACABADO: { tarifa: '', unidadMedida: 'DOCENA' }
+      })
     }
   }, [productoSeleccionado])
 
@@ -114,7 +148,23 @@ export function CatalogoAdminView({ productos, fetchProductos }: CatalogoAdminVi
         return
       }
 
-      setExito('¡Ficha técnica de catálogo guardada con éxito!')
+      // Guardar tarifas de destajo
+      for (const op of ['CORTE', 'COSTURA', 'ACABADO']) {
+        const tVal = tarifasMap[op]
+        if (tVal.tarifa !== '' && tVal.tarifa !== null) {
+          await fetch(`${API_BASE}/api/nps/admin/productos/${productoSeleccionado.id}/tarifas`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              operacion: op,
+              unidadMedida: tVal.unidadMedida,
+              tarifa: Number(tVal.tarifa)
+            })
+          })
+        }
+      }
+
+      setExito('¡Catálogo y tarifas de destajo guardadas con éxito!')
       
       // Recargar lista de productos del dashboard y actualizar la selección local
       await fetchProductos()
@@ -253,6 +303,53 @@ export function CatalogoAdminView({ productos, fetchProductos }: CatalogoAdminVi
                     onChange={(e) => setCuidados(e.target.value)}
                     className="w-full px-3 py-2 border border-[#dce7e4] rounded-xl text-sm focus:outline-none focus:border-[#47a993] transition-all"
                   />
+                </div>
+
+                {/* Tarifas por Destajo */}
+                <div className="space-y-2 pt-2 border-t border-[#eef4f2]">
+                  <label className="text-xs font-extrabold text-[#2d5a50] uppercase block">Tarifas por Destajo (Mano de Obra)</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {['CORTE', 'COSTURA', 'ACABADO'].map((op) => {
+                      const tVal = tarifasMap[op] || { tarifa: '', unidadMedida: 'DOCENA' }
+                      return (
+                        <div key={op} className="p-3 bg-[#f2faf7] border border-[#dce7e4] rounded-xl space-y-2">
+                          <span className="text-[10px] font-extrabold text-primary uppercase block">
+                            {op === 'CORTE' ? '✂️ Corte' : op === 'COSTURA' ? '🪡 Costura' : '✨ Acabado'}
+                          </span>
+                          <div className="flex gap-1.5 items-center">
+                            <input
+                              type="number"
+                              step="0.0001"
+                              placeholder="0.00"
+                              value={tVal.tarifa}
+                              onChange={(e) => {
+                                const val = e.target.value !== '' ? Number(e.target.value) : ''
+                                setTarifasMap(prev => ({
+                                  ...prev,
+                                  [op]: { ...prev[op], tarifa: val }
+                                }))
+                              }}
+                              className="w-full px-2.5 py-1.5 border border-[#dce7e4] bg-white rounded-lg text-xs font-semibold focus:outline-none focus:border-[#47a993] transition-all"
+                            />
+                            <select
+                              value={tVal.unidadMedida}
+                              onChange={(e) => {
+                                const unit = e.target.value as 'UNIDAD' | 'DOCENA'
+                                setTarifasMap(prev => ({
+                                  ...prev,
+                                  [op]: { ...prev[op], unidadMedida: unit }
+                                }))
+                              }}
+                              className="px-1.5 py-1.5 border border-[#dce7e4] bg-white rounded-lg text-[10px] font-bold focus:outline-none"
+                            >
+                              <option value="DOCENA">Docena</option>
+                              <option value="UNIDAD">Prenda</option>
+                            </select>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* Subida de Imagen */}

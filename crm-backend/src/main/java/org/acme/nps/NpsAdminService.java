@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -437,7 +438,19 @@ public class NpsAdminService {
         List<LoteDto> lotes = new ArrayList<>();
         String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
                      "l.id_maquina, m.codigo_maquina, m.nombre_maquina, l.estado, " +
-                     "(l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock " +
+                     "(l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock, " +
+                     "COALESCE((SELECT SUM(costo_total) FROM lote_insumo_consumido WHERE id_lote = l.id_lote), 0) as costo_materiales, " +
+                     "COALESCE(( " +
+                     "  SELECT SUM( " +
+                     "    CASE " +
+                     "      WHEN t.unidad_medida = 'DOCENA' THEN (l.cantidad / 12.0) * t.tarifa " +
+                     "      ELSE l.cantidad * t.tarifa " +
+                     "    END " +
+                     "  ) " +
+                     "  FROM lote_proceso lp " +
+                     "  JOIN tarifa_operacion t ON lp.operacion = t.operacion AND t.id_producto = l.id_producto " +
+                     "  WHERE lp.id_lote = l.id_lote " +
+                     "), 0) as costo_mano_obra " +
                      "FROM lote_produccion l " +
                      "JOIN producto p ON l.id_producto = p.id_producto " +
                      "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
@@ -454,6 +467,12 @@ public class NpsAdminService {
                 String nombreMaquina = rs.getString("nombre_maquina");
                 int stock = rs.getInt("stock");
                 
+                double costoMat = rs.getDouble("costo_materiales");
+                double costoMo = rs.getDouble("costo_mano_obra");
+                double costoTot = costoMat + costoMo;
+                int cantidad = rs.getInt("cantidad");
+                double costoUnit = cantidad > 0 ? (costoTot / cantidad) : 0.0;
+
                 lotes.add(new LoteDto(
                         rs.getLong("id_lote"),
                         rs.getString("codigo_lote"),
@@ -461,12 +480,16 @@ public class NpsAdminService {
                         fecha,
                         rs.getString("nombre_prenda"),
                         rs.getString("sku"),
-                        rs.getInt("cantidad"),
+                        cantidad,
                         idMaquina,
                         codigoMaquina,
                         nombreMaquina,
                         stock,
-                        rs.getString("estado")
+                        rs.getString("estado"),
+                        costoMat,
+                        costoMo,
+                        costoTot,
+                        costoUnit
                 ));
             }
         } catch (Exception e) {
@@ -562,7 +585,11 @@ public class NpsAdminService {
                                 codigoMaquina,
                                 nombreMaquina,
                                 stock,
-                                rs.getString("estado")
+                                rs.getString("estado"),
+                                0.0,
+                                0.0,
+                                0.0,
+                                0.0
                         );
                     } else {
                         throw new NpsException("Lote creado no encontrado.");
@@ -720,7 +747,8 @@ public class NpsAdminService {
                     
                     // Actualizar el estado del lote en la base de datos de forma automática
                     String nuevoEstado = "EN_PROCESO";
-                    if ("acabado".equalsIgnoreCase(request.operacion().trim())) {
+                    String opNorm = request.operacion().trim().toLowerCase();
+                    if (opNorm.startsWith("acabado") || opNorm.equals("empaque")) {
                         nuevoEstado = "TERMINADO";
                     }
                     String sqlUpdateLote = "UPDATE lote_produccion SET estado = ? WHERE id_lote = ? AND (estado != 'TERMINADO' OR ? = 'TERMINADO')";
@@ -1151,6 +1179,135 @@ public class NpsAdminService {
             ps.executeUpdate();
         } catch (Exception e) {
             throw new RuntimeException("Error al cambiar estado del trabajador: " + e.getMessage(), e);
+        }
+    }
+
+    public List<LoteInsumoConsumidoDto> obtenerInsumosLote(long idLote) {
+        List<LoteInsumoConsumidoDto> insumos = new ArrayList<>();
+        String sql = "SELECT id_insumo_consumido, id_lote, nombre_material, cantidad, unidad_medida, costo_total " +
+                     "FROM lote_insumo_consumido WHERE id_lote = ? ORDER BY id_insumo_consumido ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idLote);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    insumos.add(new LoteInsumoConsumidoDto(
+                            rs.getLong("id_insumo_consumido"),
+                            rs.getLong("id_lote"),
+                            rs.getString("nombre_material"),
+                            rs.getBigDecimal("cantidad"),
+                            rs.getString("unidad_medida"),
+                            rs.getBigDecimal("costo_total")
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar insumos del lote: " + e.getMessage(), e);
+        }
+        return insumos;
+    }
+
+    @Transactional
+    public LoteInsumoConsumidoDto registrarInsumoLote(LoteInsumoConsumidoDto request) {
+        String sql = "INSERT INTO lote_insumo_consumido (id_lote, nombre_material, cantidad, unidad_medida, costo_total) " +
+                     "VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setLong(1, request.idLote());
+            ps.setString(2, request.nombreMaterial());
+            ps.setBigDecimal(3, request.cantidad());
+            ps.setString(4, request.unidadMedida());
+            ps.setBigDecimal(5, request.costoTotal());
+            ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next()) {
+                    long id = rs.getLong(1);
+                    return new LoteInsumoConsumidoDto(
+                            id,
+                            request.idLote(),
+                            request.nombreMaterial(),
+                            request.cantidad(),
+                            request.unidadMedida(),
+                            request.costoTotal()
+                    );
+                } else {
+                    throw new NpsException("Error al generar ID para el insumo.");
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al registrar insumo del lote: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional
+    public void eliminarInsumoLote(long idInsumoConsumido) {
+        String sql = "DELETE FROM lote_insumo_consumido WHERE id_insumo_consumido = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idInsumoConsumido);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al eliminar insumo del lote: " + e.getMessage(), e);
+        }
+    }
+
+    public List<TarifaOperacionDto> obtenerTarifasProducto(long idProducto) {
+        List<TarifaOperacionDto> tarifas = new ArrayList<>();
+        String sql = "SELECT id_tarifa, id_producto, operacion, unidad_medida, tarifa " +
+                     "FROM tarifa_operacion WHERE id_producto = ? ORDER BY operacion ASC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idProducto);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    tarifas.add(new TarifaOperacionDto(
+                            rs.getLong("id_tarifa"),
+                            rs.getLong("id_producto"),
+                            rs.getString("operacion"),
+                            rs.getString("unidad_medida"),
+                            rs.getBigDecimal("tarifa")
+                    ));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar tarifas del producto: " + e.getMessage(), e);
+        }
+        return tarifas;
+    }
+
+    @Transactional
+    public TarifaOperacionDto guardarTarifaProducto(TarifaOperacionDto request) {
+        String sql = "INSERT INTO tarifa_operacion (id_producto, operacion, unidad_medida, tarifa) VALUES (?, ?, ?, ?) " +
+                     "ON CONFLICT (id_producto, operacion) DO UPDATE SET unidad_medida = EXCLUDED.unidad_medida, tarifa = EXCLUDED.tarifa";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setLong(1, request.idProducto());
+            ps.setString(2, request.operacion());
+            ps.setString(3, request.unidadMedida());
+            ps.setBigDecimal(4, request.tarifa());
+            ps.executeUpdate();
+            
+            String sqlSelect = "SELECT id_tarifa FROM tarifa_operacion WHERE id_producto = ? AND operacion = ?";
+            try (PreparedStatement psSel = conn.prepareStatement(sqlSelect)) {
+                psSel.setLong(1, request.idProducto());
+                psSel.setString(2, request.operacion());
+                try (ResultSet rs = psSel.executeQuery()) {
+                    if (rs.next()) {
+                        long id = rs.getLong("id_tarifa");
+                        return new TarifaOperacionDto(
+                                id,
+                                request.idProducto(),
+                                request.operacion(),
+                                request.unidadMedida(),
+                                request.tarifa()
+                        );
+                    } else {
+                        throw new NpsException("Error al recuperar tarifa guardada.");
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al guardar tarifa del producto: " + e.getMessage(), e);
         }
     }
 }

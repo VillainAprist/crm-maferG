@@ -299,5 +299,71 @@ public class NpsAdminResource {
     public List<InventarioDto> obtenerInventario() {
         return npsAdminService.obtenerInventario();
     }
+
+    @GET
+    @Path("/productos/{id}/tarifas")
+    public List<TarifaOperacionDto> obtenerTarifasProducto(@PathParam("id") long idProducto) {
+        return npsAdminService.obtenerTarifasProducto(idProducto);
+    }
+
+    @POST
+    @Path("/productos/{id}/tarifas")
+    public Response guardarTarifaProducto(@PathParam("id") long idProducto, TarifaOperacionDto request) {
+        try {
+            TarifaOperacionDto reqConId = new TarifaOperacionDto(
+                    request.idTarifa(),
+                    idProducto,
+                    request.operacion(),
+                    request.unidadMedida(),
+                    request.tarifa()
+            );
+            TarifaOperacionDto dto = npsAdminService.guardarTarifaProducto(reqConId);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
+
+    @GET
+    @Path("/lotes/{id}/insumos")
+    public List<LoteInsumoConsumidoDto> obtenerInsumosLote(@PathParam("id") long idLote) {
+        return npsAdminService.obtenerInsumosLote(idLote);
+    }
+
+    @POST
+    @Path("/lotes/{id}/insumos")
+    public Response registrarInsumoLote(@PathParam("id") long idLote, LoteInsumoConsumidoDto request) {
+        try {
+            LoteInsumoConsumidoDto reqConId = new LoteInsumoConsumidoDto(
+                    request.idInsumoConsumido(),
+                    idLote,
+                    request.nombreMaterial(),
+                    request.cantidad(),
+                    request.unidadMedida(),
+                    request.costoTotal()
+            );
+            LoteInsumoConsumidoDto dto = npsAdminService.registrarInsumoLote(reqConId);
+            return Response.ok(dto).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
+
+    @DELETE
+    @Path("/lotes/insumos/{id}")
+    public Response eliminarInsumoLote(@PathParam("id") long idInsumoConsumido) {
+        try {
+            npsAdminService.eliminarInsumoLote(idInsumoConsumido);
+            return Response.ok(Map.of("mensaje", "Insumo eliminado exitosamente.")).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
 }
 

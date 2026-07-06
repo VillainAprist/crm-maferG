@@ -1,6 +1,6 @@
-import { KpiCard } from './KpiCard'
-import { API_BASE } from '../config' // add your API base constant
-import type { Cupon } from '../types'
+import { KpiCard } from '../../components/ui/KpiCard'
+import { API_BASE } from '../../config' // add your API base constant
+import type { Cupon } from '../../types'
 
 export function CuponesView({
   cupones,

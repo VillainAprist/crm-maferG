@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { KpiCard } from './KpiCard'
-import type { ResumenData, Evaluacion } from '../types'
-import { EvaluacionesView } from './EvaluacionesView'
+import { KpiCard } from '../../components/ui/KpiCard'
+import type { ResumenData, Evaluacion } from '../../types'
+import { EvaluacionesView } from '../evaluaciones'
 
 export function ResumenView({
   loadingAdmin,

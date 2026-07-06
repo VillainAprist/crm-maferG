@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { Alerta, LoteProceso } from '../types'
-import { API_BASE } from '../config'
+import type { Alerta, LoteProceso } from '../../types'
+import { API_BASE } from '../../config'
 
 export function AlertasView({
   alertasLoading,

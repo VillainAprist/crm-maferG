@@ -464,3 +464,26 @@ INSERT INTO lote_insumo (id_insumo, id_proveedor, id_lote_produccion, cantidad_i
 (1, 1, 1, 150.00),
 (2, 2, 1, 500.00),
 (3, 1, 2, 10.00);
+
+-- ==========================================
+-- 26. TRACCIÓN Y COSTOS DE PRODUCCIÓN
+-- ==========================================
+
+CREATE TABLE IF NOT EXISTS lote_insumo_consumido (
+    id_insumo_consumido BIGSERIAL PRIMARY KEY,
+    id_lote BIGINT NOT NULL REFERENCES lote_produccion(id_lote) ON DELETE CASCADE,
+    nombre_material VARCHAR(100) NOT NULL,
+    cantidad NUMERIC(10, 2) NOT NULL,
+    unidad_medida VARCHAR(20) NOT NULL,
+    costo_total NUMERIC(10, 2) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tarifa_operacion (
+    id_tarifa BIGSERIAL PRIMARY KEY,
+    id_producto BIGINT NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE,
+    operacion VARCHAR(80) NOT NULL,
+    unidad_medida VARCHAR(20) NOT NULL DEFAULT 'DOCENA',
+    tarifa NUMERIC(10, 4) NOT NULL DEFAULT 0.0000,
+    CONSTRAINT uq_producto_operacion UNIQUE (id_producto, operacion)
+);
+

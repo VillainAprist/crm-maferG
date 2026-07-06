@@ -133,6 +133,27 @@ export type Lote = {
   nombreMaquina?: string | null
   stock: number
   estado: string
+  costoMateriales: number
+  costoManoObra: number
+  costoTotal: number
+  costoUnitario: number
+}
+
+export interface LoteInsumoConsumido {
+  idInsumoConsumido?: number
+  idLote: number
+  nombreMaterial: string
+  cantidad: number
+  unidadMedida: string
+  costoTotal: number
+}
+
+export interface TarifaOperacion {
+  idTarifa?: number
+  idProducto: number
+  operacion: string
+  unidadMedida: 'UNIDAD' | 'DOCENA'
+  tarifa: number
 }
 
 export type LoteResumen = {

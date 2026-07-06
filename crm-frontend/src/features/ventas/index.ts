@@ -1,0 +1,1 @@
+export { VentasView } from './VentasView'

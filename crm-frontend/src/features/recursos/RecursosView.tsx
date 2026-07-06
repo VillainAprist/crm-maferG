@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { TrabajadoresView } from './TrabajadoresView'
 import { MaquinasView } from './MaquinasView'
-import type { Maquina, Usuario } from '../types'
+import type { Maquina, Usuario } from '../../types'
 
 interface RecursosViewProps {
   maquinas: Maquina[]

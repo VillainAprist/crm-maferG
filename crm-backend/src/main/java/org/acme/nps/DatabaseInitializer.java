@@ -33,6 +33,26 @@ public class DatabaseInitializer {
 
             if (schemaExists) {
                 LOG.info("Database schema is already initialized. Skipping execution of schema_maferg.sql to preserve existing data.");
+                // Ensure new cost-tracking tables exist even if the schema was previously initialized
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute("CREATE TABLE IF NOT EXISTS lote_insumo_consumido (" +
+                                 "    id_insumo_consumido BIGSERIAL PRIMARY KEY," +
+                                 "    id_lote BIGINT NOT NULL REFERENCES lote_produccion(id_lote) ON DELETE CASCADE," +
+                                 "    nombre_material VARCHAR(100) NOT NULL," +
+                                 "    cantidad NUMERIC(10, 2) NOT NULL," +
+                                 "    unidad_medida VARCHAR(20) NOT NULL," +
+                                 "    costo_total NUMERIC(10, 2) NOT NULL" +
+                                 ")");
+                    stmt.execute("CREATE TABLE IF NOT EXISTS tarifa_operacion (" +
+                                 "    id_tarifa BIGSERIAL PRIMARY KEY," +
+                                 "    id_producto BIGINT NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE," +
+                                 "    operacion VARCHAR(80) NOT NULL," +
+                                 "    unidad_medida VARCHAR(20) NOT NULL DEFAULT 'DOCENA'," +
+                                 "    tarifa NUMERIC(10, 4) NOT NULL DEFAULT 0.0000," +
+                                 "    CONSTRAINT uq_producto_operacion UNIQUE (id_producto, operacion)" +
+                                 ")");
+                    LOG.info("Cost tracking tables checked/created successfully.");
+                }
                 return;
             }
 

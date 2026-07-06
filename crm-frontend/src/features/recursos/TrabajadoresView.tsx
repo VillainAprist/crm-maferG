@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { Usuario } from '../types'
-import { API_BASE } from '../config'
+import type { Usuario } from '../../types'
+import { API_BASE } from '../../config'
 
 interface TrabajadoresViewProps {
   usuarios: Usuario[]

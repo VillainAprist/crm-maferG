@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import type { PantallaPublica, NpsClasificacion, ApiResponse, LoteResumen } from '../types'
-import { API_BASE } from '../config'
+import type { PantallaPublica, NpsClasificacion, ApiResponse, LoteResumen } from '../../types'
+import { API_BASE } from '../../config'
 
 function generarCodigoCuponDemo(): string {
   return 'MAFERG-DEMO' + Math.random().toString(36).slice(2, 5).toUpperCase()

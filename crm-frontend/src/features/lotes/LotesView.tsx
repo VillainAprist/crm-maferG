@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { Lote, Producto, Maquina, Usuario, LoteProceso } from '../types'
-import { API_BASE } from '../config'
+import type { Lote, Producto, Maquina, Usuario, LoteProceso, LoteInsumoConsumido } from '../../types'
+import { API_BASE } from '../../config'
 
 interface LotesViewProps {
   lotes: Lote[]
@@ -45,6 +45,14 @@ export function LotesView({
   const [procesosLote, setProcesosLote] = useState<Record<number, LoteProceso[]>>({})
   const [cargandoProcesos, setCargandoProcesos] = useState<Record<number, boolean>>({})
   const [procesoError, setProcesoError] = useState<Record<number, string>>({})
+
+  // Insumos por Lote States
+  const [insumosLote, setInsumosLote] = useState<Record<number, LoteInsumoConsumido[]>>({})
+  const [nombreInsumo, setNombreInsumo] = useState('')
+  const [cantidadInsumo, setCantidadInsumo] = useState<number | ''>('')
+  const [unidadInsumo, setUnidadInsumo] = useState('Metros')
+  const [costoInsumo, setCostoInsumo] = useState<number | ''>('')
+  const [agregandoInsumo, setAgregandoInsumo] = useState(false)
 
   // Log Process Form States
   const [idOperador, setIdOperador] = useState<number | ''>('')
@@ -183,7 +191,10 @@ export function LotesView({
       return
     }
     setLoteExpandido(idLote)
-    await refreshProcesos(idLote)
+    await Promise.all([
+      refreshProcesos(idLote),
+      refreshInsumos(idLote)
+    ])
   }
 
   async function refreshProcesos(idLote: number) {
@@ -198,6 +209,63 @@ export function LotesView({
       console.error(e)
     } finally {
       setCargandoProcesos((prev) => ({ ...prev, [idLote]: false }))
+    }
+  }
+
+  async function refreshInsumos(idLote: number) {
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/lotes/${idLote}/insumos`)
+      if (res.ok) {
+        const data = (await res.json()) as LoteInsumoConsumido[]
+        setInsumosLote((prev) => ({ ...prev, [idLote]: data }))
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  async function handleAddInsumo(idLote: number, e: React.FormEvent) {
+    e.preventDefault()
+    if (!nombreInsumo || !cantidadInsumo || !unidadInsumo || !costoInsumo) return
+
+    setAgregandoInsumo(true)
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/lotes/${idLote}/insumos`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombreMaterial: nombreInsumo.trim(),
+          cantidad: Number(cantidadInsumo),
+          unidadMedida: unidadInsumo.trim(),
+          costoTotal: Number(costoInsumo)
+        })
+      })
+      if (res.ok) {
+        setNombreInsumo('')
+        setCantidadInsumo('')
+        setCostoInsumo('')
+        await refreshInsumos(idLote)
+        await fetchLotes() // Recargar costos en la lista general
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setAgregandoInsumo(false)
+    }
+  }
+
+  async function handleDeleteInsumo(idLote: number, idInsumoConsumido: number) {
+    if (!window.confirm('¿Seguro que deseas eliminar este insumo?')) return
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/lotes/insumos/${idInsumoConsumido}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        await refreshInsumos(idLote)
+        await fetchLotes()
+      }
+    } catch (e) {
+      console.error(e)
     }
   }
 
@@ -629,7 +697,7 @@ export function LotesView({
                                 className="border border-border-primary rounded-lg px-2.5 py-2 bg-white text-primary text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                               >
                                 <option value="">Seleccione Operario</option>
-                                {usuarios.map((u) => (
+                                {usuarios.filter(u => u.activo).map((u) => (
                                   <option key={u.idUsuario} value={u.idUsuario}>
                                     {u.nombres} (@{u.username})
                                   </option>
@@ -645,7 +713,7 @@ export function LotesView({
                                 className="border border-border-primary rounded-lg px-2.5 py-2 bg-white text-primary text-xs focus:outline-none focus:ring-1 focus:ring-accent"
                               >
                                 <option value="">Ninguna (Manual)</option>
-                                {maquinas.map((m) => (
+                                {maquinas.filter(m => m.activo).map((m) => (
                                   <option key={m.idMaquina} value={m.idMaquina}>
                                     {m.nombreMaquina} ({m.codigoMaquina})
                                   </option>
@@ -669,13 +737,12 @@ export function LotesView({
                           </form>
                         </div>
                       )}
-
                       {/* Timeline Log */}
-                      <div className="lg:col-span-2 space-y-3 text-left">
+                      <div className={`${userRole === 'admin' ? 'lg:col-span-1' : 'lg:col-span-2'} space-y-3 text-left`}>
                         <h5 className="text-[10px] font-extrabold text-primary uppercase tracking-wider mb-2">Historial de Confección</h5>
                         
                         {cargandoProc ? (
-                          <p className="text-xs text-secondary italic animate-pulse">Cargando historial...</p>
+                           <p className="text-xs text-secondary italic animate-pulse">Cargando historial...</p>
                         ) : procesos.length === 0 ? (
                           <div className="text-center py-8 text-gray-400 border border-dashed border-border-primary rounded-xl text-xs font-medium bg-[#fafdfe]">
                             No se han registrado operaciones en el taller para este lote.
@@ -724,6 +791,118 @@ export function LotesView({
                           </div>
                         )}
                       </div>
+
+                      {/* Columna de Costos (Solo Admin) */}
+                      {userRole === 'admin' && (
+                        <div className="bg-white border border-border-primary rounded-xl p-4 space-y-4 text-left shadow-xs">
+                          <div>
+                            <h5 className="text-[10px] font-extrabold text-primary uppercase tracking-wider">Trazabilidad de Costos</h5>
+                            <p className="text-[10px] text-secondary">Control del lote: {lote.codigoLote}</p>
+                          </div>
+
+                          {/* KPIs de Costo */}
+                          <div className="grid grid-cols-2 gap-2 bg-[#fcfdfe] p-2.5 rounded-xl border border-border-light text-xs font-semibold">
+                            <div>
+                              <span className="text-[9px] font-extrabold text-gray-400 block uppercase">Materiales</span>
+                              <span className="text-sm font-black text-[#1e3e37]">S/ {(lote.costoMateriales || 0).toFixed(2)}</span>
+                            </div>
+                            <div>
+                              <span className="text-[9px] font-extrabold text-gray-400 block uppercase">Mano de Obra</span>
+                              <span className="text-sm font-black text-[#1e3e37]">S/ {(lote.costoManoObra || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="border-t border-gray-100 pt-1.5 mt-1.5 col-span-2 flex justify-between items-center text-[10px]">
+                              <div>
+                                <span className="text-[9px] font-extrabold text-gray-400 block uppercase">Costo Total</span>
+                                <span className="text-sm font-black text-primary">S/ {(lote.costoTotal || 0).toFixed(2)}</span>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-[9px] font-extrabold text-gray-400 block uppercase">Costo Unit.</span>
+                                <span className="text-xs font-black text-accent-dark bg-[#e6f4f0] px-1.5 py-0.5 rounded-md border border-[#c3e6dc]">S/ {(lote.costoUnitario || 0).toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Formulario Añadir Insumo */}
+                          <form onSubmit={(e) => handleAddInsumo(lote.idLote, e)} className="space-y-2 border-t border-dashed border-border-light pt-3">
+                            <h6 className="text-[9px] font-extrabold text-secondary uppercase tracking-wider">Añadir Insumo Real</h6>
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                required
+                                placeholder="Nombre de insumo (ej: Tela)"
+                                value={nombreInsumo}
+                                onChange={(e) => setNombreInsumo(e.target.value)}
+                                className="w-full px-2.5 py-1.5 border border-border-primary rounded-lg text-xs bg-white text-primary focus:outline-none"
+                              />
+                              <div className="grid grid-cols-3 gap-1.5">
+                                <input
+                                  type="number"
+                                  required
+                                  min="0.01"
+                                  step="0.01"
+                                  placeholder="Cant."
+                                  value={cantidadInsumo}
+                                  onChange={(e) => setCantidadInsumo(e.target.value !== '' ? Number(e.target.value) : '')}
+                                  className="w-full px-2 py-1.5 border border-border-primary rounded-lg text-xs bg-white text-primary focus:outline-none"
+                                />
+                                <input
+                                  type="text"
+                                  required
+                                  placeholder="Unidad (KG)"
+                                  value={unidadInsumo}
+                                  onChange={(e) => setUnidadInsumo(e.target.value)}
+                                  className="w-full px-2 py-1.5 border border-border-primary rounded-lg text-xs bg-white text-primary focus:outline-none"
+                                />
+                                <input
+                                  type="number"
+                                  required
+                                  min="0.01"
+                                  step="0.01"
+                                  placeholder="Costo"
+                                  value={costoInsumo}
+                                  onChange={(e) => setCostoInsumo(e.target.value !== '' ? Number(e.target.value) : '')}
+                                  className="w-full px-2 py-1.5 border border-border-primary rounded-lg text-xs bg-white text-primary focus:outline-none"
+                                />
+                              </div>
+                              <button
+                                type="submit"
+                                disabled={agregandoInsumo}
+                                className="w-full py-1.5 bg-accent hover:bg-accent-dark text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-xs"
+                              >
+                                {agregandoInsumo ? 'Añadiendo...' : '+ Registrar Gasto de Material'}
+                              </button>
+                            </div>
+                          </form>
+
+                          {/* Listado de Insumos Registrados */}
+                          <div className="space-y-1.5 border-t border-border-light pt-3 max-h-[160px] overflow-y-auto pr-1 no-scrollbar">
+                            <h6 className="text-[9px] font-extrabold text-secondary uppercase tracking-wider">Insumos Registrados</h6>
+                            {(insumosLote[lote.idLote] || []).length === 0 ? (
+                              <p className="text-[10px] text-gray-400 italic">No hay insumos registrados para este lote.</p>
+                            ) : (
+                              (insumosLote[lote.idLote] || []).map((ins) => (
+                                <div key={ins.idInsumoConsumido} className="flex justify-between items-center bg-gray-50 border border-gray-100 rounded-lg p-2 text-[10px]">
+                                  <div className="truncate pr-2">
+                                    <strong className="text-primary font-bold">{ins.nombreMaterial}</strong>
+                                    <span className="text-secondary ml-1">({ins.cantidad} {ins.unidadMedida})</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    <span className="font-extrabold text-[#2a4e44]">S/ {(ins.costoTotal || 0).toFixed(2)}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => ins.idInsumoConsumido && handleDeleteInsumo(lote.idLote, ins.idInsumoConsumido)}
+                                      className="text-red-500 hover:text-red-700 font-bold text-xs cursor-pointer"
+                                      title="Eliminar insumo"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

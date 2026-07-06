@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import type { Lote, Venta, Cliente, ResumenVentas } from '../types'
-import { API_BASE } from '../config'
+import type { Lote, Venta, Cliente, ResumenVentas } from '../../types'
+import { API_BASE } from '../../config'
 
 interface VentasViewProps {
   ventas: Venta[]

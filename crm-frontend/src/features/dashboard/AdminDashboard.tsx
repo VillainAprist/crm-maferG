@@ -1,13 +1,13 @@
 // MAFER-G CRM Admin Dashboard - Vercel redeploy trigger
 import { useState } from 'react'
-import type { ResumenData, Alerta, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../types'
+import type { ResumenData, Alerta, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../../types'
 import { ResumenView } from './ResumenView'
-import { AlertasView } from './AlertasView'
-import { LotesView } from './LotesView'
-import { VentasView } from './VentasView'
-import { CatalogoAdminView } from './CatalogoAdminView'
-import { RecursosView } from './RecursosView'
-import { API_BASE } from '../config'
+import { AlertasView } from '../alertas'
+import { LotesView } from '../lotes'
+import { VentasView } from '../ventas'
+import { CatalogoAdminView } from '../catalogo'
+import { RecursosView } from '../recursos'
+import { API_BASE } from '../../config'
 
 export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdminMode: (mode: boolean) => void; onNavigateToCatalog: () => void }) {
   const [adminAuth, setAdminAuth] = useState(false)

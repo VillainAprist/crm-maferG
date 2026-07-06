@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import type { Maquina } from '../types'
-import { API_BASE } from '../config'
+import type { Maquina } from '../../types'
+import { API_BASE } from '../../config'
 
 interface MaquinasViewProps {
   maquinas: Maquina[]

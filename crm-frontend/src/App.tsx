@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { PublicSurvey } from './components/PublicSurvey'
-import { AdminDashboard } from './components/AdminDashboard'
-import { CatalogoView } from './components/CatalogoView'
+import { PublicSurvey } from './features/evaluaciones'
+import { AdminDashboard } from './features/dashboard'
+import { CatalogoView } from './features/catalogo'
 
 function App() {
   const [view, setView] = useState<'survey' | 'catalog' | 'admin'>('survey')

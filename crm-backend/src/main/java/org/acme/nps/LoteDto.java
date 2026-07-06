@@ -12,5 +12,9 @@ public record LoteDto(
     String codigoMaquina,
     String nombreMaquina,
     int stock,
-    String estado
+    String estado,
+    double costoMateriales,
+    double costoManoObra,
+    double costoTotal,
+    double costoUnitario
 ) {}
