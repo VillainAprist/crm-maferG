@@ -1,5 +1,5 @@
 // MAFER-G CRM Admin Dashboard - Vercel redeploy trigger
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import type { ResumenData, Alerta, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../../types'
 import { ResumenView } from './ResumenView'
 import { AlertasView } from '../alertas'
@@ -28,6 +28,11 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   const [clientes, setClientes] = useState<Cliente[]>([])
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [inventario, setInventario] = useState<Inventario[]>([])
+  
+  // Estados para desglose de lotes y modal de costos en Inventario General
+  const [expandedProductoId, setExpandedProductoId] = useState<number | null>(null)
+  const [selectedLoteParaModal, setSelectedLoteParaModal] = useState<Lote | null>(null)
+  const [filtroTipoPrenda, setFiltroTipoPrenda] = useState('')
 
   const [loadingAdmin, setLoadingAdmin] = useState(false)
   const [alertasLoading, setAlertasLoading] = useState(false)
@@ -471,6 +476,27 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
               </p>
             </div>
 
+            {/* Filtro por tipo de prenda */}
+            <div className="flex gap-4 items-center bg-[#fafdfe] border border-[#dce7e4] p-3 rounded-2xl max-w-md">
+              <span className="text-xs font-extrabold text-[#2d5a50] uppercase shrink-0">🔍 Filtrar:</span>
+              <input
+                type="text"
+                placeholder="Ej: Polo, Casaca, Bebé..."
+                value={filtroTipoPrenda}
+                onChange={(e) => setFiltroTipoPrenda(e.target.value)}
+                className="w-full px-3 py-1.5 border border-[#dce7e4] bg-white rounded-xl text-xs font-semibold focus:outline-none focus:border-[#47a993] text-primary"
+              />
+              {filtroTipoPrenda && (
+                <button
+                  type="button"
+                  onClick={() => setFiltroTipoPrenda('')}
+                  className="text-xs text-gray-400 hover:text-gray-600 font-bold px-1"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
             {inventarioLoading ? (
               <div className="text-center py-8 text-gray-400">Cargando inventario...</div>
             ) : inventario.length === 0 ? (
@@ -491,29 +517,148 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#eef4f2]">
-                    {inventario.map((item) => (
-                      <tr key={item.idProducto} className="hover:bg-[#fbfdfe] transition-colors">
-                        <td className="px-4 py-3 font-semibold text-[#16342d]">{item.nombrePrenda}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-[#53796f]">{item.sku}</td>
-                        <td className="px-4 py-3 text-xs text-[#2d5a50]">{item.categoriaInfantil || 'Sin Categoría'}</td>
-                        <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalProducido} uds.</td>
-                        <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalVendido} uds.</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${item.stockDisponible > 20
-                            ? 'bg-green-50 text-green-700 border border-green-200'
-                            : item.stockDisponible > 0
-                              ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
-                              : 'bg-red-50 text-red-700 border border-red-200'
-                            }`}>
-                            {item.stockDisponible} uds.
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {inventario.filter(item => {
+                      const search = filtroTipoPrenda.trim().toLowerCase()
+                      return (
+                        item.nombrePrenda.toLowerCase().includes(search) ||
+                        item.sku.toLowerCase().includes(search) ||
+                        (item.categoriaInfantil && item.categoriaInfantil.toLowerCase().includes(search))
+                      )
+                    }).map((item) => {
+                      const isExpanded = expandedProductoId === item.idProducto
+                      const lotesDeProducto = lotes.filter(l => l.sku === item.sku)
+
+                      return (
+                        <Fragment key={item.idProducto}>
+                          <tr
+                            onClick={() => setExpandedProductoId(isExpanded ? null : item.idProducto)}
+                            className="hover:bg-[#f2faf7] transition-colors cursor-pointer select-none"
+                          >
+                            <td className="px-4 py-3 font-semibold text-[#16342d]">
+                              <span className="inline-block mr-2 text-[10px] text-gray-400">
+                                {isExpanded ? '▼' : '▶'}
+                              </span>
+                              {item.nombrePrenda}
+                            </td>
+                            <td className="px-4 py-3 font-mono text-xs text-[#53796f]">{item.sku}</td>
+                            <td className="px-4 py-3 text-xs text-[#2d5a50]">{item.categoriaInfantil || 'Sin Categoría'}</td>
+                            <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalProducido} uds.</td>
+                            <td className="px-4 py-3 text-center text-xs text-gray-600 font-semibold">{item.totalVendido} uds.</td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-bold ${item.stockDisponible > 20
+                                ? 'bg-green-50 text-green-700 border border-green-200'
+                                : item.stockDisponible > 0
+                                  ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                                  : 'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
+                                {item.stockDisponible} uds.
+                              </span>
+                            </td>
+                          </tr>
+                          {isExpanded && (
+                            <tr>
+                              <td colSpan={6} className="bg-[#fafdfe] p-4 border-b border-[#dce7e4] text-left">
+                                <div className="space-y-3">
+                                  <h4 className="text-xs font-extrabold text-[#2d5a50] uppercase tracking-wider">Lotes de Confección Asociados</h4>
+                                  {lotesDeProducto.length === 0 ? (
+                                    <p className="text-xs text-gray-400 italic">No hay lotes registrados para esta prenda.</p>
+                                  ) : (
+                                    <div className="overflow-x-auto border border-[#dce7e4] rounded-xl bg-white shadow-inner">
+                                      <table className="w-full text-xs text-left text-gray-500">
+                                        <thead className="text-[10px] text-[#1c4a3f] bg-[#f2faf7] uppercase">
+                                          <tr>
+                                            <th className="px-3 py-2 font-bold">Código Lote</th>
+                                            <th className="px-3 py-2 font-bold">Fecha</th>
+                                            <th className="px-3 py-2 text-center font-bold">Cantidad</th>
+                                            <th className="px-3 py-2 text-center font-bold">Stock</th>
+                                            <th className="px-3 py-2 font-bold">Estado</th>
+                                            <th className="px-3 py-2 text-right font-bold">Costo Total</th>
+                                            <th className="px-3 py-2 text-center font-bold">Acción</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-[#eef4f2]">
+                                          {lotesDeProducto.map(l => (
+                                            <tr key={l.idLote} className="hover:bg-[#fcfdfe]">
+                                              <td className="px-3 py-2 font-mono font-bold text-primary">{l.codigoLote}</td>
+                                              <td className="px-3 py-2 text-secondary">{l.fechaConfeccion}</td>
+                                              <td className="px-3 py-2 text-center">{l.cantidad} uds.</td>
+                                              <td className="px-3 py-2 text-center font-bold">{l.stock} uds.</td>
+                                              <td className="px-3 py-2 font-semibold">
+                                                {l.estado === 'TERMINADO' ? '🟢 Terminado' : l.estado === 'EN_PROCESO' ? '🟡 En Proceso' : '⚪ Registrado'}
+                                              </td>
+                                              <td className="px-3 py-2 text-right font-extrabold text-primary">S/ {(l.costoTotal || 0).toFixed(2)}</td>
+                                              <td className="px-3 py-2 text-center">
+                                                <button
+                                                  type="button"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation()
+                                                    setSelectedLoteParaModal(l)
+                                                  }}
+                                                  className="px-2.5 py-1 bg-primary hover:bg-primary-hover text-white font-extrabold text-[10px] uppercase tracking-wider rounded-md transition-all cursor-pointer"
+                                                >
+                                                  ⚙️ Costos e Insumos
+                                                </button>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </Fragment>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
             )}
+          </div>
+        )}
+        {selectedLoteParaModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs animate-fadeIn p-4">
+            <div className="bg-white rounded-2xl border border-[#dce7e4] shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-scaleIn">
+              {/* Modal Header */}
+              <div className="px-6 py-4 bg-[#f2faf7] border-b border-[#dce7e4] flex justify-between items-center flex-shrink-0 text-left">
+                <div>
+                  <h3 className="font-extrabold text-[#173c34] text-sm uppercase tracking-wide">Gestión y Trazabilidad del Lote</h3>
+                  <p className="text-[11px] text-[#4f6f66]">Código: <span className="font-mono font-bold text-primary">{selectedLoteParaModal.codigoLote}</span> | Prenda: <span className="font-bold text-primary">{selectedLoteParaModal.nombrePrenda}</span></p>
+                </div>
+                <button
+                  onClick={() => setSelectedLoteParaModal(null)}
+                  className="text-gray-400 hover:text-gray-600 font-bold text-lg cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                <LotesView
+                  lotes={[lotes.find(l => l.idLote === selectedLoteParaModal.idLote) || selectedLoteParaModal]}
+                  productos={productos}
+                  maquinas={maquinas}
+                  usuarios={usuarios}
+                  userRole={userRole}
+                  loading={false}
+                  fetchLotes={fetchLotes}
+                  fetchProductos={fetchProductos}
+                />
+              </div>
+              
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-white border-t border-[#eef4f2] flex justify-end flex-shrink-0">
+                <button
+                  onClick={() => setSelectedLoteParaModal(null)}
+                  className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-[#2d5a50] text-xs font-bold rounded-full transition-all cursor-pointer"
+                >
+                  Cerrar Ventana
+                </button>
+              </div>
+            </div>
           </div>
         )}
         {adminTab === 'catalogo' && userRole === 'admin' && (

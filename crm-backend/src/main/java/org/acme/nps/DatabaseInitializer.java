@@ -51,7 +51,8 @@ public class DatabaseInitializer {
                                  "    tarifa NUMERIC(10, 4) NOT NULL DEFAULT 0.0000," +
                                  "    CONSTRAINT uq_producto_operacion UNIQUE (id_producto, operacion)" +
                                  ")");
-                    LOG.info("Cost tracking tables checked/created successfully.");
+                    stmt.execute("ALTER TABLE lote_proceso ADD COLUMN IF NOT EXISTS costo NUMERIC(10, 2) DEFAULT 0.00");
+                    LOG.info("Cost tracking tables and columns checked/created successfully.");
                 }
                 return;
             }

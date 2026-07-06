@@ -440,17 +440,7 @@ public class NpsAdminService {
                      "l.id_maquina, m.codigo_maquina, m.nombre_maquina, l.estado, " +
                      "(l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock, " +
                      "COALESCE((SELECT SUM(costo_total) FROM lote_insumo_consumido WHERE id_lote = l.id_lote), 0) as costo_materiales, " +
-                     "COALESCE(( " +
-                     "  SELECT SUM( " +
-                     "    CASE " +
-                     "      WHEN t.unidad_medida = 'DOCENA' THEN (l.cantidad / 12.0) * t.tarifa " +
-                     "      ELSE l.cantidad * t.tarifa " +
-                     "    END " +
-                     "  ) " +
-                     "  FROM lote_proceso lp " +
-                     "  JOIN tarifa_operacion t ON lp.operacion = t.operacion AND t.id_producto = l.id_producto " +
-                     "  WHERE lp.id_lote = l.id_lote " +
-                     "), 0) as costo_mano_obra " +
+                     "COALESCE((SELECT SUM(costo) FROM lote_proceso WHERE id_lote = l.id_lote), 0) as costo_mano_obra " +
                      "FROM lote_produccion l " +
                      "JOIN producto p ON l.id_producto = p.id_producto " +
                      "LEFT JOIN maquina m ON l.id_maquina = m.id_maquina " +
@@ -677,7 +667,7 @@ public class NpsAdminService {
     public List<LoteProcesoDto> obtenerProcesosPorLote(long idLote) {
         List<LoteProcesoDto> procesos = new ArrayList<>();
         String sql = "SELECT lp.id_proceso, lp.id_lote, lp.id_usuario, u.nombres as nombre_operador, " +
-                     "lp.id_maquina, m.codigo_maquina, m.nombre_maquina, lp.operacion as operacion, lp.fecha_registro " +
+                     "lp.id_maquina, m.codigo_maquina, m.nombre_maquina, lp.operacion as operacion, lp.costo, lp.fecha_registro " +
                      "FROM lote_proceso lp " +
                      "JOIN usuario u ON lp.id_usuario = u.id_usuario " +
                      "LEFT JOIN maquina m ON lp.id_maquina = m.id_maquina " +
@@ -700,6 +690,7 @@ public class NpsAdminService {
                         rs.getString("codigo_maquina"),
                         rs.getString("nombre_maquina"),
                         rs.getString("operacion"),
+                        rs.getDouble("costo"),
                         fecha
                     ));
                 }
@@ -708,6 +699,19 @@ public class NpsAdminService {
             throw new RuntimeException("Error al consultar procesos del lote: " + e.getMessage(), e);
         }
         return procesos;
+    }
+
+    @Transactional
+    public void actualizarCostoProceso(long idProceso, double costo) {
+        String sql = "UPDATE lote_proceso SET costo = ? WHERE id_proceso = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, costo);
+            ps.setLong(2, idProceso);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            throw new RuntimeException("Error al actualizar costo del proceso: " + e.getMessage(), e);
+        }
     }
 
     @Transactional
@@ -727,7 +731,7 @@ public class NpsAdminService {
             System.err.println("No se pudo mapear la operacion " + request.operacion() + ": " + e.getMessage());
         }
 
-        String sql = "INSERT INTO lote_proceso (id_lote, id_usuario, id_maquina, id_tipo_operacion, operacion) VALUES (?, ?, ?, ?, ?) RETURNING id_proceso, fecha_registro";
+        String sql = "INSERT INTO lote_proceso (id_lote, id_usuario, id_maquina, id_tipo_operacion, operacion, costo) VALUES (?, ?, ?, ?, ?, ?) RETURNING id_proceso, fecha_registro";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setLong(1, idLote);
@@ -739,6 +743,7 @@ public class NpsAdminService {
             }
             ps.setLong(4, idTipoOperacion);
             ps.setString(5, request.operacion());
+            ps.setDouble(6, request.costo());
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     long id = rs.getLong(1);
@@ -761,7 +766,7 @@ public class NpsAdminService {
                         System.err.println("No se pudo actualizar el estado del lote: " + ex.getMessage());
                     }
 
-                    return new LoteProcesoDto(id, idLote, request.idUsuario(), "", request.idMaquina(), "", "", request.operacion(), fecha);
+                    return new LoteProcesoDto(id, idLote, request.idUsuario(), "", request.idMaquina(), "", "", request.operacion(), request.costo(), fecha);
                 }
                 throw new NpsException("No se pudo registrar la operación de confección.");
             }

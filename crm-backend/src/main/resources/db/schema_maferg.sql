@@ -128,6 +128,7 @@ CREATE TABLE lote_proceso (
     id_maquina BIGINT REFERENCES maquina(id_maquina),
     id_tipo_operacion BIGINT NOT NULL REFERENCES tipo_operacion(id_tipo_operacion),
     operacion VARCHAR(150) NOT NULL, -- Mantener por compatibilidad con consultas anteriores
+    costo NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     fecha_registro TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

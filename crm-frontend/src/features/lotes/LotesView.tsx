@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Lote, Producto, Maquina, Usuario, LoteProceso, LoteInsumoConsumido } from '../../types'
 import { API_BASE } from '../../config'
 
@@ -62,6 +62,18 @@ export function LotesView({
 
   const [copiadoLote, setCopiadoLote] = useState<string | null>(null)
   const [fechaFiltro, setFechaFiltro] = useState<'TODO' | 'HOY' | 'SEMANA' | 'MES'>('TODO')
+
+  // Auto-expandir si hay exactamente un lote en la lista (para uso en modal)
+  useEffect(() => {
+    if (lotes.length === 1 && loteExpandido !== lotes[0].idLote) {
+      const targetLote = lotes[0]
+      setLoteExpandido(targetLote.idLote)
+      Promise.all([
+        refreshProcesos(targetLote.idLote),
+        refreshInsumos(targetLote.idLote)
+      ])
+    }
+  }, [lotes])
 
   const operacionesDisponibles = [
     'Corte',
@@ -263,6 +275,21 @@ export function LotesView({
       if (res.ok) {
         await refreshInsumos(idLote)
         await fetchLotes()
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
+  async function handleUpdateCostoProceso(idProceso: number, costo: number, idLote: number) {
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/lotes/procesos/${idProceso}/costo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ costo })
+      })
+      if (res.ok) {
+        await refreshProcesos(idLote)
+        await fetchLotes() // Recargar costos en la lista general
       }
     } catch (e) {
       console.error(e)
@@ -767,6 +794,34 @@ export function LotesView({
                                       </>
                                     )}
                                   </p>
+                                  {userRole === 'admin' ? (
+                                    <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-100">
+                                      <span className="text-[10px] font-extrabold text-[#2d5a50] uppercase">Costo Mano de Obra:</span>
+                                      <div className="flex items-center gap-1">
+                                        <span className="text-[10px] font-bold text-gray-400">S/</span>
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          min="0"
+                                          placeholder="0.00"
+                                          defaultValue={p.costo}
+                                          onBlur={async (e) => {
+                                            const val = e.target.value !== '' ? Number(e.target.value) : 0
+                                            if (val !== p.costo) {
+                                              await handleUpdateCostoProceso(p.idProceso, val, lote.idLote)
+                                            }
+                                          }}
+                                          className="w-16 px-1.5 py-0.5 border border-[#dce7e4] bg-white rounded text-[10px] font-bold text-primary focus:outline-none focus:border-accent"
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    p.costo > 0 && (
+                                      <div className="mt-2 pt-1 border-t border-gray-50 text-[10px] font-semibold text-secondary">
+                                        💰 Costo: <strong className="text-[#2d5a50]">S/ {p.costo.toFixed(2)}</strong>
+                                      </div>
+                                    )
+                                  )}
                                 </div>
                               </div>
                             ))}

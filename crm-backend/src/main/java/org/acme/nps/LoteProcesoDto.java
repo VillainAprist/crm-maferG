@@ -9,5 +9,6 @@ public record LoteProcesoDto(
     String codigoMaquina,
     String nombreMaquina,
     String operacion,
+    double costo,
     String fechaRegistro
 ) {}

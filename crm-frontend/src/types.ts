@@ -101,6 +101,7 @@ export type LoteProceso = {
   codigoMaquina: string | null
   nombreMaquina: string | null
   operacion: string
+  costo: number
   fechaRegistro: string
 }
 

@@ -263,6 +263,21 @@ public class NpsAdminResource {
         }
     }
 
+    @POST
+    @Path("/lotes/procesos/{idProceso}/costo")
+    public Response actualizarCostoProceso(@PathParam("idProceso") long idProceso, Map<String, Double> payload) {
+        try {
+            Double costo = payload.get("costo");
+            if (costo == null) {
+                return Response.status(Response.Status.BAD_REQUEST).entity(Map.of("error", "El campo 'costo' es requerido.")).build();
+            }
+            npsAdminService.actualizarCostoProceso(idProceso, costo);
+            return Response.ok(Map.of("success", true)).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST).entity(Map.of("error", e.getMessage())).build();
+        }
+    }
+
     @GET
     @Path("/ventas")
     public List<VentaDto> obtenerVentas() {
