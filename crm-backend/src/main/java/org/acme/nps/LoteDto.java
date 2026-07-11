@@ -12,7 +12,6 @@ public record LoteDto(
     String codigoMaquina,
     String nombreMaquina,
     int stock,
-    String estado,
     double costoMateriales,
     double costoManoObra,
     double costoTotal,

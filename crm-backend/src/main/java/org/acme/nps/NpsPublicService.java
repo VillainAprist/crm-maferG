@@ -23,6 +23,9 @@ public class NpsPublicService {
     @Inject
     AgroalDataSource dataSource;
 
+    @Inject
+    NpsAdminService npsAdminService;
+
     @Transactional
     public NpsIngestaResponse registrarEvaluacion(NpsIngestaRequest request) {
         boolean isAnonimo = (request.email() == null || request.email().isBlank())
@@ -367,9 +370,12 @@ public class NpsPublicService {
                     }
                 }
             }
+            List<LoteProcesoDto> procesos = (idLote != -1)
+                    ? npsAdminService.obtenerProcesosPorLote(idLote)
+                    : List.of();
 
             return new LoteResumenDto(codigoLote, nombrePrenda, sku, categoriaInfantil, fechaConfeccion, yaRespondido, cantidad, idMaquina, codigoMaquina, nombreMaquina,
-                                      clienteNombre, clienteEmail, clienteTelefono, clienteCiudad, clienteTipo);
+                                      clienteNombre, clienteEmail, clienteTelefono, clienteCiudad, clienteTipo, procesos);
         } catch (Exception ex) {
             if (ex instanceof NpsException) {
                 throw (NpsException) ex;

@@ -82,7 +82,8 @@ export function PublicSurvey({
             categoriaInfantil: 'Conjuntos',
             fechaConfeccion: '2026-06-18',
             yaRespondido: false,
-            cantidad: 24
+            cantidad: 24,
+            procesos: []
           })
           setPantalla('bienvenida')
         } else {
@@ -437,6 +438,25 @@ export function PublicSurvey({
               ) : (
                 <div className="h-[140px] rounded-2xl bg-gradient-to-br from-[#c7ebe1] via-[#f5f8e6] to-[#e8fff8] border border-[#d6e5e2] flex items-center justify-center">
                   <span className="text-5xl opacity-80">✨</span>
+                </div>
+              )}
+
+              {loteInfo && loteInfo.procesos && loteInfo.procesos.length > 0 && (
+                <div className="border border-border-primary bg-white rounded-2xl p-4 text-left shadow-xs space-y-3 animate-fadeIn">
+                  <h4 className="text-[10px] font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
+                    🧵 Conoce la historia de tu prenda
+                  </h4>
+                  <div className="relative border-l-2 border-accent/25 pl-4 ml-1.5 space-y-3 my-2 text-xs">
+                    {loteInfo.procesos.map((p, idx) => (
+                      <div key={idx} className="relative text-xs">
+                        <span className="absolute -left-[22px] top-1.5 w-2 h-2 rounded-full bg-accent border border-white shadow-xs" />
+                        <span className="font-bold text-primary text-xs">{p.operacion}</span>
+                        <p className="text-[9px] text-secondary font-medium">
+                          Realizado por: <strong className="text-primary">{p.nombreOperador}</strong> {p.fechaRegistro ? `· ${p.fechaRegistro.split(' ')[0]}` : ''}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

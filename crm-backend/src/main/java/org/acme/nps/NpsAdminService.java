@@ -61,6 +61,13 @@ public class NpsAdminService {
             String fecha,
             String ciudad
     ) {}
+    public record LogAuditoria(
+            long idLog,
+            String usuario,
+            String accion,
+            String detalle,
+            String fechaRegistro
+    ) {}
 
     public List<Alerta> obtenerAlertas() {
         List<Alerta> alertas = new ArrayList<>();
@@ -437,7 +444,7 @@ public class NpsAdminService {
     public List<LoteDto> obtenerLotes() {
         List<LoteDto> lotes = new ArrayList<>();
         String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
-                     "l.id_maquina, m.codigo_maquina, m.nombre_maquina, l.estado, " +
+                     "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
                      "(l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock, " +
                      "COALESCE((SELECT SUM(costo_total) FROM lote_insumo_consumido WHERE id_lote = l.id_lote), 0) as costo_materiales, " +
                      "COALESCE((SELECT SUM(costo) FROM lote_proceso WHERE id_lote = l.id_lote), 0) as costo_mano_obra " +
@@ -475,7 +482,6 @@ public class NpsAdminService {
                         codigoMaquina,
                         nombreMaquina,
                         stock,
-                        rs.getString("estado"),
                         costoMat,
                         costoMo,
                         costoTot,
@@ -545,7 +551,7 @@ public class NpsAdminService {
 
             // Devolver Lote creado
             String sqlSelect = "SELECT l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
-                               "l.id_maquina, m.codigo_maquina, m.nombre_maquina, l.estado, " +
+                               "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
                                "l.cantidad as stock " +
                                "FROM lote_produccion l " +
                                "JOIN producto p ON l.id_producto = p.id_producto " +
@@ -575,7 +581,6 @@ public class NpsAdminService {
                                 codigoMaquina,
                                 nombreMaquina,
                                 stock,
-                                rs.getString("estado"),
                                 0.0,
                                 0.0,
                                 0.0,
@@ -749,23 +754,6 @@ public class NpsAdminService {
                     long id = rs.getLong(1);
                     java.sql.Timestamp ts = rs.getTimestamp(2);
                     String fecha = ts != null ? ts.toInstant().toString().substring(0, 16).replace("T", " ") : "";
-                    
-                    // Actualizar el estado del lote en la base de datos de forma automática
-                    String nuevoEstado = "EN_PROCESO";
-                    String opNorm = request.operacion().trim().toLowerCase();
-                    if (opNorm.startsWith("acabado") || opNorm.equals("empaque")) {
-                        nuevoEstado = "TERMINADO";
-                    }
-                    String sqlUpdateLote = "UPDATE lote_produccion SET estado = ? WHERE id_lote = ? AND (estado != 'TERMINADO' OR ? = 'TERMINADO')";
-                    try (PreparedStatement psUp = conn.prepareStatement(sqlUpdateLote)) {
-                        psUp.setString(1, nuevoEstado);
-                        psUp.setLong(2, idLote);
-                        psUp.setString(3, nuevoEstado);
-                        psUp.executeUpdate();
-                    } catch (Exception ex) {
-                        System.err.println("No se pudo actualizar el estado del lote: " + ex.getMessage());
-                    }
-
                     return new LoteProcesoDto(id, idLote, request.idUsuario(), "", request.idMaquina(), "", "", request.operacion(), request.costo(), fecha);
                 }
                 throw new NpsException("No se pudo registrar la operación de confección.");
@@ -1314,5 +1302,31 @@ public class NpsAdminService {
         } catch (Exception e) {
             throw new RuntimeException("Error al guardar tarifa del producto: " + e.getMessage(), e);
         }
+    }
+
+    public List<LogAuditoria> obtenerLogsAuditoria() {
+        List<LogAuditoria> logs = new ArrayList<>();
+        String sql = "SELECT l.id_log, COALESCE(u.username, 'Sistema') as usuario, l.accion, l.detalle, l.fecha_registro " +
+                     "FROM log_sistema l " +
+                     "LEFT JOIN usuario u ON l.id_usuario = u.id_usuario " +
+                     "ORDER BY l.id_log DESC";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                java.sql.Timestamp ts = rs.getTimestamp("fecha_registro");
+                String fecha = ts != null ? DATE_FORMATTER.format(ts.toInstant()) + " " + TIME_FORMATTER.format(ts.toInstant()) : "";
+                logs.add(new LogAuditoria(
+                        rs.getLong("id_log"),
+                        rs.getString("usuario"),
+                        rs.getString("accion"),
+                        rs.getString("detalle"),
+                        fecha
+                ));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al consultar logs de auditoría: " + e.getMessage(), e);
+        }
+        return logs;
     }
 }

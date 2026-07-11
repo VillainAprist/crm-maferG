@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Alerta, LoteProceso } from '../../types'
+import type { Alerta, LoteProceso, LoteInsumoConsumido } from '../../types'
 import { API_BASE } from '../../config'
 
 export function AlertasView({
@@ -21,6 +21,8 @@ export function AlertasView({
   // Traceability states
   const [procesosByLote, setProcesosByLote] = useState<Record<number, LoteProceso[]>>({})
   const [loadingProcesos, setLoadingProcesos] = useState<Record<number, boolean>>({})
+  const [insumosByLote, setInsumosByLote] = useState<Record<number, LoteInsumoConsumido[]>>({})
+  const [loadingInsumos, setLoadingInsumos] = useState<Record<number, boolean>>({})
 
   async function fetchProcesos(idLote: number) {
     if (procesosByLote[idLote] || loadingProcesos[idLote]) return
@@ -38,6 +40,22 @@ export function AlertasView({
     }
   }
 
+  async function fetchInsumos(idLote: number) {
+    if (insumosByLote[idLote] || loadingInsumos[idLote]) return
+    setLoadingInsumos(prev => ({ ...prev, [idLote]: true }))
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/lotes/${idLote}/insumos`)
+      if (res.ok) {
+        const data = await res.json() as LoteInsumoConsumido[]
+        setInsumosByLote(prev => ({ ...prev, [idLote]: data }))
+      }
+    } catch (e) {
+      console.error('Error al cargar insumos del lote:', e)
+    } finally {
+      setLoadingInsumos(prev => ({ ...prev, [idLote]: false }))
+    }
+  }
+
   function toggleExpand(id: string, idLote: number) {
     const nextState = !expandedIds[id]
     setExpandedIds((prev) => ({
@@ -46,6 +64,7 @@ export function AlertasView({
     }))
     if (nextState) {
       fetchProcesos(idLote)
+      fetchInsumos(idLote)
     }
   }
 
@@ -243,6 +262,31 @@ export function AlertasView({
                       </div>
                     ) : (
                       <p className="text-xs text-gray-400 italic font-medium">No se registraron operaciones de producción para este lote.</p>
+                    )}
+                  </div>
+
+                  <div className="pt-3 border-t border-dashed border-border-light">
+                    <span className="text-gray-400 font-extrabold block text-[9px] uppercase tracking-wider mb-2">Materiales e Insumos Consumidos</span>
+                    {loadingInsumos[item.idLote] ? (
+                      <p className="text-xs text-gray-400 animate-pulse font-medium">Cargando insumos...</p>
+                    ) : insumosByLote[item.idLote] && insumosByLote[item.idLote].length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-2">
+                        {insumosByLote[item.idLote].map((ins, idx) => (
+                          <div key={idx} className="bg-[#fcfdfe] border border-border-light rounded-xl px-3 py-2 flex items-center justify-between">
+                            <div>
+                              <strong className="text-primary text-xs">{ins.nombreMaterial}</strong>
+                              <p className="text-[10px] text-secondary mt-0.5 font-medium">
+                                Cantidad: {ins.cantidad} {ins.unidadMedida}
+                              </p>
+                            </div>
+                            <span className="text-xs font-extrabold text-primary">
+                              S/ {ins.costoTotal.toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic font-medium">No se registraron materiales consumidos para este lote.</p>
                     )}
                   </div>
                 </div>

@@ -1,5 +1,7 @@
 package org.acme.nps;
 
+import java.util.List;
+
 public record LoteResumenDto(
     String codigoLote,
     String nombrePrenda,
@@ -15,5 +17,6 @@ public record LoteResumenDto(
     String clienteEmail,
     String clienteTelefono,
     String clienteCiudad,
-    String clienteTipo
+    String clienteTipo,
+    List<LoteProcesoDto> procesos
 ) {}

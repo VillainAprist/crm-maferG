@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import type { ResumenData, Alerta, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../../types'
 import { ResumenView } from './ResumenView'
+import { AuditoriaView } from './AuditoriaView'
 import { AlertasView } from '../alertas'
 import { LotesView } from '../lotes'
 import { VentasView } from '../ventas'
@@ -49,6 +50,7 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     { key: 'ventas', label: 'Reporte de Ventas' },
     { key: 'catalogo', label: 'Gestionar Catálogo' },
     { key: 'recursos', label: 'Recursos' },
+    { key: 'auditoria', label: 'Auditoría' },
   ] : []
 
   function handleLogin() {
@@ -615,6 +617,9 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
             productos={productos}
             fetchProductos={fetchProductos}
           />
+        )}
+        {adminTab === 'auditoria' && userRole === 'admin' && (
+          <AuditoriaView />
         )}
       </div>
     </div>

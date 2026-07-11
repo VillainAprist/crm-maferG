@@ -655,15 +655,6 @@ export function LotesView({
                         <span className="inline-block text-[10px] font-extrabold bg-accent-light text-accent-dark px-2.5 py-0.5 rounded-full border border-[#cce2db] font-mono">
                           {lote.codigoLote}
                         </span>
-                        <span className={`inline-block text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border tracking-wide uppercase ${
-                          lote.estado === 'TERMINADO'
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : lote.estado === 'EN_PROCESO'
-                            ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                            : 'bg-gray-50 text-gray-500 border-gray-200'
-                        }`}>
-                          {lote.estado === 'TERMINADO' ? '🟢 Terminado' : lote.estado === 'EN_PROCESO' ? '🟡 En Proceso' : '⚪ Registrado'}
-                        </span>
                         <span className="text-[10px] text-gray-400 font-medium">Registrado: {lote.fechaConfeccion}</span>
                       </div>
                       <h4 className="text-base font-extrabold text-primary">{lote.nombrePrenda}</h4>

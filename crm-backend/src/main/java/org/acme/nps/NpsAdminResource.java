@@ -133,6 +133,12 @@ public class NpsAdminResource {
     }
 
     @GET
+    @Path("/auditoria")
+    public List<NpsAdminService.LogAuditoria> obtenerLogsAuditoria() {
+        return npsAdminService.obtenerLogsAuditoria();
+    }
+
+    @GET
     @Path("/productos")
     public List<ProductoDto> obtenerProductos() {
         return npsAdminService.obtenerProductos();

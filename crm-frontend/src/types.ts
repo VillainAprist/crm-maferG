@@ -61,7 +61,7 @@ export type ResumenData = {
   ultimosEventos: Evento[]
 }
 
-export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario' | 'trabajadores' | 'catalogo' | 'recursos'
+export type AdminTab = 'resumen' | 'alertas' | 'lotes' | 'maquinas' | 'ventas' | 'inventario' | 'trabajadores' | 'catalogo' | 'recursos' | 'auditoria'
 
 export type PantallaPublica = 'token-invalido' | 'bienvenida' | 'encuesta' | 'promotor' | 'detractor' | 'pasivo'
 
@@ -133,7 +133,6 @@ export type Lote = {
   codigoMaquina?: string | null
   nombreMaquina?: string | null
   stock: number
-  estado: string
   costoMateriales: number
   costoManoObra: number
   costoTotal: number
@@ -173,6 +172,7 @@ export type LoteResumen = {
   clienteTelefono?: string | null
   clienteCiudad?: string | null
   clienteTipo?: string | null
+  procesos: LoteProceso[]
 }
 
 export type Cliente = {
@@ -201,4 +201,12 @@ export type ResumenVentas = {
   promedioVenta: number
   porProducto: { nombrePrenda: string; unidades: number; monto: number }[]
   porMes: { mes: string; unidades: number; monto: number }[]
+}
+
+export type LogAuditoria = {
+  idLog: number
+  usuario: string
+  accion: string
+  detalle: string
+  fechaRegistro: string
 }
