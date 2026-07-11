@@ -119,6 +119,7 @@ export type Venta = {
   montoTotal: number
   tokenQr: string
   fechaVenta: string
+  costoUnitarioLote: number
 }
 
 export type Lote = {

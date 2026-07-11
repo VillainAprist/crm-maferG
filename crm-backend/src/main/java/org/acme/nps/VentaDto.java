@@ -13,5 +13,7 @@ public record VentaDto(
     int descuentoPorcentaje,
     double montoTotal,
     String tokenQr,
-    String fechaVenta
+    String fechaVenta,
+    double costoUnitarioLote
 ) {}
+

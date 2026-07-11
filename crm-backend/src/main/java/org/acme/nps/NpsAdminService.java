@@ -768,7 +768,9 @@ public class NpsAdminService {
         String sql = "SELECT v.id_venta, v.id_lote, l.codigo_lote, p.nombre_prenda, " +
                      "v.id_cliente, c.nombre_razon_social as nombre_cliente, " +
                      "v.cantidad_vendida, v.unidad_venta, v.precio_unitario, v.descuento_porcentaje, v.monto_total, " +
-                     "v.token_qr, v.fecha_venta " +
+                     "v.token_qr, v.fecha_venta, " +
+                     "CAST((COALESCE((SELECT SUM(costo_total) FROM lote_insumo_consumido WHERE id_lote = l.id_lote), 0) + " +
+                     "COALESCE((SELECT SUM(costo) FROM lote_proceso WHERE id_lote = l.id_lote), 0)) / NULLIF(l.cantidad, 0) AS double precision) as costo_unitario_lote " +
                      "FROM venta v " +
                      "JOIN lote_produccion l ON v.id_lote = l.id_lote " +
                      "JOIN producto p ON l.id_producto = p.id_producto " +
@@ -793,7 +795,8 @@ public class NpsAdminService {
                     rs.getInt("descuento_porcentaje"),
                     rs.getDouble("monto_total"),
                     rs.getObject("token_qr").toString(),
-                    fecha
+                    fecha,
+                    rs.getDouble("costo_unitario_lote")
                 ));
             }
         } catch (Exception e) {
@@ -1017,7 +1020,9 @@ public class NpsAdminService {
             String sqlSelect = "SELECT v.id_venta, v.id_lote, l.codigo_lote, p.nombre_prenda, " +
                                "v.id_cliente, c.nombre_razon_social as nombre_cliente, " +
                                "v.cantidad_vendida, v.unidad_venta, v.precio_unitario, v.descuento_porcentaje, v.monto_total, " +
-                               "v.token_qr, v.fecha_venta " +
+                               "v.token_qr, v.fecha_venta, " +
+                               "CAST((COALESCE((SELECT SUM(costo_total) FROM lote_insumo_consumido WHERE id_lote = l.id_lote), 0) + " +
+                               "COALESCE((SELECT SUM(costo) FROM lote_proceso WHERE id_lote = l.id_lote), 0)) / NULLIF(l.cantidad, 0) AS double precision) as costo_unitario_lote " +
                                "FROM venta v " +
                                "JOIN lote_produccion l ON v.id_lote = l.id_lote " +
                                "JOIN producto p ON l.id_producto = p.id_producto " +
@@ -1042,7 +1047,8 @@ public class NpsAdminService {
                             rs.getInt("descuento_porcentaje"),
                             rs.getDouble("monto_total"),
                             tokenQr.toString(),
-                            fecha
+                            fecha,
+                            rs.getDouble("costo_unitario_lote")
                         );
                     } else {
                         throw new NpsException("Venta creada no encontrada.");

@@ -11,8 +11,9 @@ import { API_BASE } from '../../config'
 
 export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdminMode: (mode: boolean) => void; onNavigateToCatalog: () => void }) {
   const [adminAuth, setAdminAuth] = useState(false)
-  const [pinInput, setPinInput] = useState('')
-  const [pinError, setPinError] = useState('')
+  const [userInput, setUserInput] = useState('')
+  const [passwordInput, setPasswordInput] = useState('')
+  const [loginError, setLoginError] = useState('')
   const [userRole, setUserRole] = useState<'admin' | 'operador' | 'ventas' | 'soporte' | null>(null)
 
   const [adminTab, setAdminTab] = useState<AdminTab>('resumen')
@@ -52,12 +53,16 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   ] : []
 
   function handleLogin() {
-    if (pinInput === '1234') {
+    const user = userInput.trim().toLowerCase()
+    const pass = passwordInput
+
+    if (user === 'admin' && pass === 'admin123') {
       setAdminAuth(true)
       setUserRole('admin')
       setAdminTab('resumen')
-      setPinInput('')
-      setPinError('')
+      setUserInput('')
+      setPasswordInput('')
+      setLoginError('')
       fetchResumen()
       fetchAlertas()
       fetchEvaluaciones()
@@ -68,34 +73,37 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
       fetchClientes()
       fetchUsuarios()
       fetchInventario()
-    } else if (pinInput === '4321') {
+    } else if (user === 'operador' && pass === 'operador123') {
       setAdminAuth(true)
       setUserRole('operador')
       setAdminTab('lotes')
-      setPinInput('')
-      setPinError('')
+      setUserInput('')
+      setPasswordInput('')
+      setLoginError('')
       fetchLotes()
       fetchProductos()
       fetchMaquinas()
       fetchUsuarios()
-    } else if (pinInput === '7777') {
+    } else if (user === 'ventas' && pass === 'ventas123') {
       setAdminAuth(true)
       setUserRole('ventas')
       setAdminTab('ventas')
-      setPinInput('')
-      setPinError('')
+      setUserInput('')
+      setPasswordInput('')
+      setLoginError('')
       fetchLotes()
       fetchVentas()
       fetchClientes()
-    } else if (pinInput === '9999') {
+    } else if (user === 'soporte' && pass === 'soporte123') {
       setAdminAuth(true)
       setUserRole('soporte')
       setAdminTab('alertas')
-      setPinInput('')
-      setPinError('')
+      setUserInput('')
+      setPasswordInput('')
+      setLoginError('')
       fetchAlertas()
     } else {
-      setPinError('PIN incorrecto')
+      setLoginError('Usuario o contraseña incorrectos')
     }
   }
 
@@ -103,8 +111,9 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     setAdminAuth(false)
     setAdminMode(false)
     setUserRole(null)
-    setPinInput('')
-    setPinError('')
+    setUserInput('')
+    setPasswordInput('')
+    setLoginError('')
     setResumenData(null)
     setAlertas([])
     setLotes([])
@@ -318,29 +327,42 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
             <span>Acceso Personal</span>
             <span className="text-sm">🔒</span>
           </h2>
-          <p className="text-xs text-secondary mt-1">Ingresa tu código PIN de seguridad</p>
+          <p className="text-xs text-secondary mt-1">Ingresa tus credenciales de acceso</p>
         </div>
 
-        <label className="flex flex-col gap-1.5 mb-4 text-left">
-          <span className="text-xs font-bold text-secondary">Código PIN</span>
-          <input
-            type="password"
-            value={pinInput}
-            onChange={(e) => { setPinInput(e.target.value); setPinError('') }}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}
-            maxLength={6}
-            className="border border-border-primary rounded-xl px-4 py-3 text-lg text-center font-mono tracking-widest text-primary bg-[#fafdfe] focus:outline-2 focus:outline-accent/30 transition-all"
-            placeholder="••••"
-            autoFocus
-          />
-        </label>
+        <div className="space-y-3 mb-4 text-left">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold text-secondary">Usuario</span>
+            <input
+              type="text"
+              value={userInput}
+              onChange={(e) => { setUserInput(e.target.value); setLoginError('') }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}
+              className="border border-[#cce2db] rounded-xl px-4 py-2.5 text-xs text-primary bg-[#fafdfe] focus:outline-2 focus:outline-accent/30 transition-all font-semibold"
+              placeholder="Ej. admin"
+              autoFocus
+            />
+          </label>
 
-        {pinError && <p className="text-red-600 text-xs mb-4 text-center font-bold">{pinError}</p>}
+          <label className="flex flex-col gap-1.5">
+            <span className="text-xs font-bold text-secondary">Contraseña</span>
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => { setPasswordInput(e.target.value); setLoginError('') }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleLogin() }}
+              className="border border-[#cce2db] rounded-xl px-4 py-2.5 text-xs text-primary bg-[#fafdfe] focus:outline-2 focus:outline-accent/30 transition-all"
+              placeholder="••••••••"
+            />
+          </label>
+        </div>
+
+        {loginError && <p className="text-red-600 text-xs mb-4 text-center font-bold">{loginError}</p>}
 
         <button
-          className="w-full py-3.5 rounded-full bg-gradient-to-r from-accent to-[#47a993] text-white font-extrabold cursor-pointer hover:opacity-95 transition-all shadow-md shadow-accent/20"
+          className="w-full py-3.5 rounded-full bg-gradient-to-r from-accent to-[#47a993] text-white text-xs font-extrabold uppercase tracking-wide cursor-pointer hover:opacity-95 transition-all shadow-md shadow-accent/20"
           onClick={handleLogin}
-          disabled={!pinInput}
+          disabled={!userInput || !passwordInput}
         >
           Ingresar al Sistema
         </button>

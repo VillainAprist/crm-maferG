@@ -272,6 +272,12 @@ export function VentasView({
   const totalHistorial = useMemo(() =>
     ventas.reduce((acc, v) => acc + (v.montoTotal ?? 0), 0), [ventas])
 
+  const totalCostoProduccion = useMemo(() =>
+    ventas.reduce((acc, v) => acc + ((v.costoUnitarioLote || 0) * v.cantidadVendida), 0), [ventas])
+
+  const totalUtilidad = useMemo(() =>
+    totalHistorial - totalCostoProduccion, [totalHistorial, totalCostoProduccion])
+
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Header con toggle POS / Análisis */}
@@ -655,6 +661,8 @@ export function VentasView({
                       <th className="px-4 py-3.5 font-bold">Lote / Prenda</th>
                       <th className="px-4 py-3.5 text-center font-bold">Cantidad</th>
                       <th className="px-4 py-3.5 text-right font-bold">Precio</th>
+                      {isAdmin && <th className="px-4 py-3.5 text-right font-bold">Costo Confección</th>}
+                      {isAdmin && <th className="px-4 py-3.5 text-right font-bold">Utilidad</th>}
                       <th className="px-4 py-3.5 text-right font-bold">Total</th>
                       <th className="px-4 py-3.5 text-center font-bold">Acc.</th>
                     </tr>
@@ -662,6 +670,9 @@ export function VentasView({
                   <tbody className="divide-y divide-border-light text-xs">
                     {ventasFiltradas.map((v) => {
                       const docenas = v.unidadVenta === 'DOCENA' ? Math.floor(v.cantidadVendida / 12) : null
+                      const costoUnit = v.costoUnitarioLote || 0
+                      const costoTotalVenta = costoUnit * v.cantidadVendida
+                      const utilidad = v.montoTotal - costoTotalVenta
                       return (
                         <tr key={v.idVenta} className="hover:bg-[#fbfdfe] transition-colors">
                           <td className="px-4 py-3 text-secondary font-mono whitespace-nowrap">{v.fechaVenta}</td>
@@ -685,6 +696,19 @@ export function VentasView({
                               <span className="ml-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">-{v.descuentoPorcentaje}%</span>
                             )}
                           </td>
+                          {isAdmin && (
+                            <td className="px-4 py-3 text-right text-secondary whitespace-nowrap font-medium">
+                              {formatSoles(costoTotalVenta)}
+                              <span className="block text-[9px] text-gray-400 font-mono">
+                                (U: {formatSoles(costoUnit)})
+                              </span>
+                            </td>
+                          )}
+                          {isAdmin && (
+                            <td className={`px-4 py-3 text-right font-extrabold whitespace-nowrap ${utilidad >= 0 ? 'text-green-600 bg-green-50/20' : 'text-red-600 bg-red-50/20'} rounded`}>
+                              {formatSoles(utilidad)}
+                            </td>
+                          )}
                           <td className="px-4 py-3 text-right font-extrabold text-primary">{formatSoles(v.montoTotal)}</td>
                           <td className="px-4 py-3 text-center">
                             <button
@@ -718,17 +742,19 @@ export function VentasView({
           ) : (
             <>
               {/* KPIs */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                 {[
                   { label: 'Total Facturado', value: formatSoles(resumenVentas.totalFacturado), icon: '💰' },
+                  { label: 'Costo Producción', value: formatSoles(totalCostoProduccion), icon: '🧵' },
+                  { label: 'Utilidad Estimada', value: formatSoles(totalUtilidad), icon: '💎' },
                   { label: 'N° de Ventas', value: String(resumenVentas.totalVentas), icon: '🧾' },
-                  { label: 'Unidades Vendidas', value: `${resumenVentas.totalUnidadesVendidas} uds (${Math.floor(resumenVentas.totalUnidadesVendidas / 12)} doc)`, icon: '📦' },
+                  { label: 'Unidades Vendidas', value: `${resumenVentas.totalUnidadesVendidas} uds`, icon: '📦' },
                   { label: 'Ticket Promedio', value: formatSoles(resumenVentas.promedioVenta), icon: '📈' },
                 ].map((kpi) => (
                   <div key={kpi.label} className="bg-white border border-border-primary rounded-2xl p-4 shadow-sm space-y-1">
                     <span className="text-lg">{kpi.icon}</span>
-                    <p className="text-xs text-secondary font-semibold">{kpi.label}</p>
-                    <p className="text-sm font-extrabold text-primary">{kpi.value}</p>
+                    <p className="text-[10px] text-secondary font-semibold leading-tight">{kpi.label}</p>
+                    <p className="text-xs font-extrabold text-primary whitespace-nowrap">{kpi.value}</p>
                   </div>
                 ))}
               </div>
