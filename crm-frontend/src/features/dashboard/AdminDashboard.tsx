@@ -1,5 +1,5 @@
 // MAFER-G CRM Admin Dashboard - Vercel redeploy trigger
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ResumenData, Alerta, AdminTab, Lote, Producto, Evaluacion, Maquina, Venta, Cliente, Usuario, Inventario } from '../../types'
 import { ResumenView } from './ResumenView'
 import { AlertasView } from '../alertas'
@@ -53,64 +53,113 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
     { key: 'recursos', label: 'Recursos' },
   ] : []
 
-  function handleLogin() {
+  // Interceptor global de fetch para inyectar token de autorización y manejar expiraciones
+  useEffect(() => {
+    const originalFetch = window.fetch;
+    window.fetch = async (input, init) => {
+      const url = typeof input === 'string' ? input : (input as any).url;
+      if (url.includes('/api/nps/admin/')) {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          init = init || {};
+          const headers = new Headers(init.headers || {});
+          headers.set('Authorization', `Bearer ${token}`);
+          init.headers = headers;
+        }
+      }
+      const response = await originalFetch(input, init);
+      if (response.status === 401 && url.includes('/api/nps/admin/')) {
+        // Limpiar sesión expirada y redirigir al login
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('user_role');
+        setAdminAuth(false);
+        setUserRole(null);
+      }
+      return response;
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
+  // Restore session from localStorage if token is present
+  useEffect(() => {
+    const savedToken = localStorage.getItem('auth_token');
+    const savedRole = localStorage.getItem('user_role') as any;
+    if (savedToken && savedRole) {
+      setAdminAuth(true);
+      setUserRole(savedRole);
+      setAdminTab(savedRole === 'admin' ? 'resumen' : savedRole === 'operador' ? 'lotes' : savedRole === 'ventas' ? 'ventas' : 'alertas');
+      // Fetch initial data based on role
+      if (savedRole === 'admin') {
+        fetchResumen(); fetchAlertas(); fetchEvaluaciones(); fetchLotes(); fetchProductos(); fetchMaquinas(); fetchVentas(); fetchClientes(); fetchUsuarios(); fetchInventario();
+      } else if (savedRole === 'operador') {
+        fetchLotes(); fetchProductos(); fetchMaquinas(); fetchUsuarios();
+      } else if (savedRole === 'ventas') {
+        fetchLotes(); fetchVentas(); fetchClientes();
+      } else if (savedRole === 'soporte') {
+        fetchAlertas();
+      }
+    }
+  }, []);
+
+  async function handleLogin() {
     const user = userInput.trim().toLowerCase()
     const pass = passwordInput
 
-    if (user === 'admin' && pass === 'admin123') {
+    if (!user || !pass) {
+      setLoginError('Usuario y contraseña son requeridos.')
+      return
+    }
+
+    setLoginError('')
+    setLoadingAdmin(true)
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password: pass })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setLoginError(data.error || 'Error al iniciar sesión.')
+        return
+      }
+
+      // Guardar sesión en localStorage
+      localStorage.setItem('auth_token', data.token)
+      localStorage.setItem('user_role', data.role)
+
       setAdminAuth(true)
-      setUserRole('admin')
-      setAdminTab('resumen')
+      setUserRole(data.role)
+      setAdminTab(data.role === 'admin' ? 'resumen' : data.role === 'operador' ? 'lotes' : data.role === 'ventas' ? 'ventas' : 'alertas')
       setUserInput('')
       setPasswordInput('')
-      setLoginError('')
-      fetchResumen()
-      fetchAlertas()
-      fetchEvaluaciones()
-      fetchLotes()
-      fetchProductos()
-      fetchMaquinas()
-      fetchVentas()
-      fetchClientes()
-      fetchUsuarios()
-      fetchInventario()
-    } else if (user === 'operador' && pass === 'operador123') {
-      setAdminAuth(true)
-      setUserRole('operador')
-      setAdminTab('lotes')
-      setUserInput('')
-      setPasswordInput('')
-      setLoginError('')
-      fetchLotes()
-      fetchProductos()
-      fetchMaquinas()
-      fetchUsuarios()
-    } else if (user === 'ventas' && pass === 'ventas123') {
-      setAdminAuth(true)
-      setUserRole('ventas')
-      setAdminTab('ventas')
-      setUserInput('')
-      setPasswordInput('')
-      setLoginError('')
-      fetchLotes()
-      fetchVentas()
-      fetchClientes()
-    } else if (user === 'soporte' && pass === 'soporte123') {
-      setAdminAuth(true)
-      setUserRole('soporte')
-      setAdminTab('alertas')
-      setUserInput('')
-      setPasswordInput('')
-      setLoginError('')
-      fetchAlertas()
-    } else {
-      setLoginError('Usuario o contraseña incorrectos')
+
+      // Cargar datos
+      if (data.role === 'admin') {
+        fetchResumen(); fetchAlertas(); fetchEvaluaciones(); fetchLotes(); fetchProductos(); fetchMaquinas(); fetchVentas(); fetchClientes(); fetchUsuarios(); fetchInventario();
+      } else if (data.role === 'operador') {
+        fetchLotes(); fetchProductos(); fetchMaquinas(); fetchUsuarios();
+      } else if (data.role === 'ventas') {
+        fetchLotes(); fetchVentas(); fetchClientes();
+      } else if (data.role === 'soporte') {
+        fetchAlertas();
+      }
+
+    } catch (err) {
+      setLoginError('Error de conexión al servidor.')
+    } finally {
+      setLoadingAdmin(false)
     }
   }
 
   function handleLogout() {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('user_role')
     setAdminAuth(false)
-    setAdminMode(false)
     setUserRole(null)
     setUserInput('')
     setPasswordInput('')

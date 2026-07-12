@@ -47,7 +47,9 @@ CREATE TABLE usuario (
     nombres VARCHAR(150) NOT NULL,
     username VARCHAR(80) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
-    activo BOOLEAN NOT NULL DEFAULT TRUE
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    intentos_fallidos INT NOT NULL DEFAULT 0,
+    bloqueado_hasta TIMESTAMPTZ
 );
 
 CREATE TABLE sesion_usuario (
@@ -309,13 +311,15 @@ CREATE INDEX IF NOT EXISTS idx_lote_proceso_lote ON lote_proceso(id_lote);
 INSERT INTO rol (nombre_rol) VALUES 
 ('OPERADOR'), 
 ('ATENCION_CLIENTE'), 
-('ADMINISTRADOR');
+('ADMINISTRADOR'),
+('VENTAS');
 
 -- 2. Usuarios
 INSERT INTO usuario (id_rol, nombres, username, password_hash, activo) VALUES
-(1, 'Operador Demo', 'operador.demo', 'demo-hash', TRUE),
-(2, 'Soporte Demo', 'soporte.demo', 'soporte-hash', TRUE),
-(3, 'Admin Demo', 'admin.demo', 'admin-hash', TRUE),
+(1, 'Operador Demo', 'operador', 'demo-hash', TRUE),
+(2, 'Soporte Demo', 'soporte', 'soporte-hash', TRUE),
+(3, 'Admin Demo', 'admin', 'admin-hash', TRUE),
+(4, 'Ventas Demo', 'ventas', 'ventas-hash', TRUE),
 (1, 'Lucas Arevalo Salazar', 'lucas.arevalo', 'lucas-hash', TRUE),
 (1, 'Dennis Jun Pyo', 'dennis.jun', 'dennis-hash', TRUE),
 (1, 'Diego Topuria McGregor', 'diego.topuria', 'diego-hash', TRUE);
@@ -438,7 +442,7 @@ INSERT INTO cupon_fidelizacion (id_evaluacion, id_campana, codigo_hash, estado, 
 
 -- 20. Historial de Reconocimientos
 INSERT INTO historial_reconocimiento (id_cliente, tipo_reconocimiento, detalle, fecha_otorgado) VALUES
-(1, 'Cupón Fidelidad Promotor', 'Se otorgó un cupón del 15% de descuento para su próxima compra por ser cliente Promotor.', now() - interval '10 day');
+(1, 'Cupón Fidelidad Promotor', 'Se otorgó un cupón del 5% de descuento para su próxima compra por ser cliente Promotor.', now() - interval '10 day');
 
 -- 21. Sesión Usuario (Prueba)
 INSERT INTO sesion_usuario (id_usuario, token) VALUES 

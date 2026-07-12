@@ -25,9 +25,28 @@ class NpsFlowTest {
     private static String tokenQr;
     private static String lastAlertaId;
     private static String lastCuponCodigo;
+    private static String adminToken;
 
     @Test
     @Order(1)
+    void testLogin() {
+        adminToken = given()
+            .contentType(ContentType.JSON)
+            .body(Map.of(
+                "username", "admin",
+                "password", "admin123"
+            ))
+            .when().post("/api/auth/login")
+            .then()
+            .statusCode(200)
+            .body("token", notNullValue())
+            .extract().path("token");
+
+        System.out.println("Obtained admin JWT Token: " + adminToken);
+    }
+
+    @Test
+    @Order(2)
     void testGetDemoToken() {
         tokenQr = given()
             .when().get("/api/nps/public/demo-token")
@@ -40,7 +59,7 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(2)
+    @Order(3)
     void testSubmitPromoterSurvey() {
         String uniqueEmail = "promotor." + System.currentTimeMillis() + "@maferg.com";
         String uniquePhone = "999" + (System.currentTimeMillis() % 1000000);
@@ -73,7 +92,7 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(3)
+    @Order(4)
     void testSubmitDetractorSurvey() {
         String uniqueEmail = "detractor." + System.currentTimeMillis() + "@maferg.com";
         String uniquePhone = "998" + (System.currentTimeMillis() % 1000000);
@@ -98,9 +117,10 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(4)
+    @Order(5)
     void testAdminResumenMetrics() {
         given()
+            .header("Authorization", "Bearer " + adminToken)
             .when().get("/api/nps/admin/resumen")
             .then()
             .statusCode(200)
@@ -112,10 +132,11 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(5)
+    @Order(6)
     void testAdminAlertsAndResolve() {
         // Fetch alerts to find the one we just generated
         var response = given()
+            .header("Authorization", "Bearer " + adminToken)
             .when().get("/api/nps/admin/alertas")
             .then()
             .statusCode(200)
@@ -127,6 +148,7 @@ class NpsFlowTest {
 
         // Resolve the alert
         given()
+            .header("Authorization", "Bearer " + adminToken)
             .contentType(ContentType.JSON)
             .body(Map.of("comentario", "Solucionado con reembolso y cambio de prenda."))
             .when().post("/api/nps/admin/alertas/" + lastAlertaId + "/resolver")
@@ -136,6 +158,7 @@ class NpsFlowTest {
 
         // Verify it is resolved
         given()
+            .header("Authorization", "Bearer " + adminToken)
             .when().get("/api/nps/admin/alertas")
             .then()
             .statusCode(200)
@@ -143,9 +166,10 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(6)
+    @Order(7)
     void testAdminCoupons() {
         given()
+            .header("Authorization", "Bearer " + adminToken)
             .when().get("/api/nps/admin/cupones")
             .then()
             .statusCode(200)
@@ -154,7 +178,7 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(7)
+    @Order(8)
     void testSubmitAnonymousSurvey() {
         given()
             .contentType(ContentType.JSON)
@@ -177,7 +201,7 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(8)
+    @Order(9)
     void testGetLoteResumen() {
         // Test con token válido
         given()
@@ -199,7 +223,7 @@ class NpsFlowTest {
     }
 
     @Test
-    @Order(9)
+    @Order(10)
     void testCleanUpTestData() throws Exception {
         try (java.sql.Connection conn = dataSource.getConnection();
              java.sql.Statement stmt = conn.createStatement()) {

@@ -190,21 +190,20 @@ public class NpsPublicService {
 
             // 5. Crear Cupón de Fidelización si no es anónimo
             if (!isAnonimo) {
-                int totalEvaluaciones = 0;
+                int totalVentas = 0;
                 try (PreparedStatement ps = conn.prepareStatement(
-                        "SELECT COUNT(*) FROM evaluacion_nps WHERE id_cliente = ?")) {
+                        "SELECT COUNT(*) FROM venta WHERE id_cliente = ?")) {
                     ps.setLong(1, idCliente);
                     try (ResultSet rs = ps.executeQuery()) {
                         if (rs.next()) {
-                            totalEvaluaciones = rs.getInt(1);
+                            totalVentas = rs.getInt(1);
                         }
                     }
                 }
 
-                boolean esPrimerRegistro = (totalEvaluaciones <= 1); // <= 1 porque acabamos de insertar la actual
-                boolean ganaCuponAleatorio = !esPrimerRegistro && (secureRandom.nextDouble() < 0.30); // 30% de probabilidad en encuestas siguientes
+                boolean ganaCupon = (totalVentas > 0 && totalVentas % 2 != 0);
 
-                if (esPrimerRegistro || ganaCuponAleatorio) {
+                if (ganaCupon) {
                     codigoCupon = generarCodigoCuponUnico();
                     try (PreparedStatement ps = conn.prepareStatement(
                             "INSERT INTO cupon_fidelizacion (id_evaluacion, codigo_hash, estado, fecha_expiracion) VALUES (?, ?, 'DISPONIBLE', now() + interval '30 day')")) {

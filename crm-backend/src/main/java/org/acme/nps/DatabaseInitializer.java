@@ -31,43 +31,122 @@ public class DatabaseInitializer {
                 }
             }
 
-            if (schemaExists) {
-                LOG.info("Database schema is already initialized. Skipping execution of schema_maferg.sql to preserve existing data.");
-                // Ensure new cost-tracking tables exist even if the schema was previously initialized
-                try (Statement stmt = conn.createStatement()) {
-                    stmt.execute("CREATE TABLE IF NOT EXISTS lote_insumo_consumido (" +
-                                 "    id_insumo_consumido BIGSERIAL PRIMARY KEY," +
-                                 "    id_lote BIGINT NOT NULL REFERENCES lote_produccion(id_lote) ON DELETE CASCADE," +
-                                 "    nombre_material VARCHAR(100) NOT NULL," +
-                                 "    cantidad NUMERIC(10, 2) NOT NULL," +
-                                 "    unidad_medida VARCHAR(20) NOT NULL," +
-                                 "    costo_total NUMERIC(10, 2) NOT NULL" +
-                                 ")");
-                    stmt.execute("CREATE TABLE IF NOT EXISTS tarifa_operacion (" +
-                                 "    id_tarifa BIGSERIAL PRIMARY KEY," +
-                                 "    id_producto BIGINT NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE," +
-                                 "    operacion VARCHAR(80) NOT NULL," +
-                                 "    unidad_medida VARCHAR(20) NOT NULL DEFAULT 'DOCENA'," +
-                                 "    tarifa NUMERIC(10, 4) NOT NULL DEFAULT 0.0000," +
-                                 "    CONSTRAINT uq_producto_operacion UNIQUE (id_producto, operacion)" +
-                                 ")");
-                    stmt.execute("ALTER TABLE lote_proceso ADD COLUMN IF NOT EXISTS costo NUMERIC(10, 2) DEFAULT 0.00");
-                    LOG.info("Cost tracking tables and columns checked/created successfully.");
+            if (!schemaExists) {
+                LOG.info("Initializing 28-table PostgreSQL database schema from schema_maferg.sql...");
+                try (InputStream is = getClass().getResourceAsStream("/db/schema_maferg.sql")) {
+                    if (is == null) {
+                        LOG.error("schema_maferg.sql not found in resources!");
+                        return;
+                    }
+                    
+                    String sql = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                    try (Statement stmt = conn.createStatement()) {
+                        stmt.execute(sql);
+                        LOG.info("Database schema initialized and seeded successfully (28 tables in 3FN).");
+                    }
                 }
-                return;
+            } else {
+                LOG.info("Database schema is already initialized. Skipping execution of schema_maferg.sql to preserve existing data.");
             }
 
-            LOG.info("Initializing 28-table PostgreSQL database schema from schema_maferg.sql...");
-            try (InputStream is = getClass().getResourceAsStream("/db/schema_maferg.sql")) {
-                if (is == null) {
-                    LOG.error("schema_maferg.sql not found in resources!");
-                    return;
-                }
+            // Always check tables and convert password hashes
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("CREATE TABLE IF NOT EXISTS lote_insumo_consumido (" +
+                             "    id_insumo_consumido BIGSERIAL PRIMARY KEY," +
+                             "    id_lote BIGINT NOT NULL REFERENCES lote_produccion(id_lote) ON DELETE CASCADE," +
+                             "    nombre_material VARCHAR(100) NOT NULL," +
+                             "    cantidad NUMERIC(10, 2) NOT NULL," +
+                             "    unidad_medida VARCHAR(20) NOT NULL," +
+                             "    costo_total NUMERIC(10, 2) NOT NULL" +
+                             ")");
+                stmt.execute("CREATE TABLE IF NOT EXISTS tarifa_operacion (" +
+                             "    id_tarifa BIGSERIAL PRIMARY KEY," +
+                             "    id_producto BIGINT NOT NULL REFERENCES producto(id_producto) ON DELETE CASCADE," +
+                             "    operacion VARCHAR(80) NOT NULL," +
+                             "    unidad_medida VARCHAR(20) NOT NULL DEFAULT 'DOCENA'," +
+                             "    tarifa NUMERIC(10, 4) NOT NULL DEFAULT 0.0000," +
+                             "    CONSTRAINT uq_producto_operacion UNIQUE (id_producto, operacion)" +
+                             ")");
+                stmt.execute("ALTER TABLE lote_proceso ADD COLUMN IF NOT EXISTS costo NUMERIC(10, 2) DEFAULT 0.00");
                 
-                String sql = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                try (Statement stmt = conn.createStatement()) {
-                    stmt.execute(sql);
-                    LOG.info("Database schema initialized and seeded successfully (28 tables in 3FN).");
+                // Nuevas columnas de seguridad
+                stmt.execute("ALTER TABLE usuario ADD COLUMN IF NOT EXISTS intentos_fallidos INT DEFAULT 0");
+                stmt.execute("ALTER TABLE usuario ADD COLUMN IF NOT EXISTS bloqueado_hasta TIMESTAMPTZ");
+                
+                // Renombrar usuarios legacy de .demo a nombres limpios
+                stmt.execute("UPDATE usuario SET username = 'admin' WHERE username = 'admin.demo'");
+                stmt.execute("UPDATE usuario SET username = 'operador' WHERE username = 'operador.demo'");
+                stmt.execute("UPDATE usuario SET username = 'soporte' WHERE username = 'soporte.demo'");
+                stmt.execute("UPDATE usuario SET username = 'ventas' WHERE username = 'ventas.demo'");
+
+                stmt.execute("UPDATE usuario SET activo = TRUE WHERE username IN ('admin', 'operador', 'soporte')");
+
+                // Asegurar que el rol VENTAS exista
+                long idRolVentas = -1;
+                try (ResultSet rs = stmt.executeQuery("SELECT id_rol FROM rol WHERE nombre_rol = 'VENTAS'")) {
+                    if (rs.next()) {
+                        idRolVentas = rs.getLong(1);
+                    }
+                }
+                if (idRolVentas == -1) {
+                    try (java.sql.PreparedStatement ps = conn.prepareStatement("INSERT INTO rol (nombre_rol) VALUES ('VENTAS') RETURNING id_rol", java.sql.Statement.RETURN_GENERATED_KEYS)) {
+                        ps.executeUpdate();
+                        try (ResultSet rs = ps.getGeneratedKeys()) {
+                            if (rs.next()) {
+                                idRolVentas = rs.getLong(1);
+                            }
+                        }
+                    }
+                }
+
+                // Asegurar que el usuario ventas exista
+                boolean ventasUserExists = false;
+                try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM usuario WHERE username = 'ventas'")) {
+                    if (rs.next() && rs.getInt(1) > 0) {
+                        ventasUserExists = true;
+                    }
+                }
+                if (!ventasUserExists && idRolVentas != -1) {
+                    try (java.sql.PreparedStatement ps = conn.prepareStatement(
+                            "INSERT INTO usuario (id_rol, nombres, username, password_hash, activo) VALUES (?, 'Ventas Demo', 'ventas', 'ventas-hash', TRUE)")) {
+                        ps.setLong(1, idRolVentas);
+                        ps.executeUpdate();
+                    }
+                }
+
+                stmt.execute("UPDATE usuario SET activo = TRUE WHERE username IN ('admin', 'operador', 'soporte', 'ventas')");
+                LOG.info("Cost tracking and security tables and columns checked/created successfully.");
+
+                // Convertir contraseñas legacy a BCrypt hashes
+                try (ResultSet rs = stmt.executeQuery("SELECT id_usuario, username, password_hash FROM usuario")) {
+                    java.util.List<Object[]> usersToUpdate = new java.util.ArrayList<>();
+                    while (rs.next()) {
+                        long id = rs.getLong("id_usuario");
+                        String username = rs.getString("username");
+                        String hash = rs.getString("password_hash");
+                        if (hash == null || !hash.contains(":")) {
+                            String rawPassword;
+                            if (username.contains("admin")) rawPassword = "admin123";
+                            else if (username.contains("operador")) rawPassword = "operador123";
+                            else if (username.contains("soporte")) rawPassword = "soporte123";
+                            else if (username.contains("ventas")) rawPassword = "ventas123";
+                            else if (username.contains("lucas")) rawPassword = "lucas123";
+                            else if (username.contains("dennis")) rawPassword = "dennis123";
+                            else if (username.contains("diego")) rawPassword = "diego123";
+                            else rawPassword = username.replace(".", "") + "123";
+                            
+                            String pbkdf2Hash = PasswordHasher.hashPassword(rawPassword);
+                            usersToUpdate.add(new Object[]{id, pbkdf2Hash});
+                        }
+                    }
+                    for (Object[] user : usersToUpdate) {
+                        try (java.sql.PreparedStatement ps = conn.prepareStatement("UPDATE usuario SET password_hash = ? WHERE id_usuario = ?")) {
+                            ps.setString(1, (String) user[1]);
+                            ps.setLong(2, (Long) user[0]);
+                            ps.executeUpdate();
+                        }
+                    }
+                    LOG.info("BCrypt password migration checked/applied successfully.");
                 }
             }
         } catch (Exception e) {

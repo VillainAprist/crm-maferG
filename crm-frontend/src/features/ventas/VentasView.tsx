@@ -77,7 +77,7 @@ export function VentasView({
 
   const stockInsuficiente = cantidadUnidades > stockMax && !!idLote && cantidadInput !== '' && Number(cantidadInput) > 0
 
-  const descuentoPct = cuponEstado === 'valido' ? 15 : 0
+  const descuentoPct = cuponEstado === 'valido' ? 5 : 0
   const subtotal = precioUnitario !== '' ? Number(precioUnitario) * (unidadVenta === 'DOCENA' ? Number(cantidadInput) || 0 : cantidadUnidades) : 0
   const descuentoMonto = subtotal * descuentoPct / 100
   const totalFinal = subtotal - descuentoMonto
@@ -102,7 +102,7 @@ export function VentasView({
           setCuponMsg(`Cupón ${found.estado.toLowerCase()}. No se puede aplicar.`)
         } else {
           setCuponEstado('valido')
-          setCuponMsg('Cupón válido — 15% de descuento aplicado.')
+          setCuponMsg('Cupón válido — 5% de descuento aplicado.')
         }
       }
     } catch {

@@ -505,7 +505,7 @@ public class NpsAdminService {
         try (Connection conn = dataSource.getConnection()) {
             // Obtener un operador ID
             long idUsuario = -1;
-            try (PreparedStatement ps = conn.prepareStatement("SELECT id_usuario FROM usuario WHERE username = 'operador.demo' LIMIT 1")) {
+            try (PreparedStatement ps = conn.prepareStatement("SELECT id_usuario FROM usuario WHERE username = 'operador' LIMIT 1")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     if (rs.next()) {
                         idUsuario = rs.getLong("id_usuario");
@@ -981,7 +981,7 @@ public class NpsAdminService {
 
             // 3. Registrar venta con precio, unidad y descuento
             long idVenta;
-            int descuentoPct = (idCupon != -1) ? 15 : 0;
+            int descuentoPct = (idCupon != -1) ? 5 : 0;
             double precioUnitario = request.precioUnitario() > 0 ? request.precioUnitario() : 0.0;
             String unidadVenta = (request.unidadVenta() != null && request.unidadVenta().equalsIgnoreCase("DOCENA")) ? "DOCENA" : "UNIDAD";
             double cantidadParaMonto = unidadVenta.equals("DOCENA") ? (request.cantidadVendida() / 12.0) : request.cantidadVendida();

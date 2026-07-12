@@ -49,12 +49,12 @@ export function CatalogoView({
   const mostrarDescuento = !!couponCode
   
   const calcularPrecioConDescuento = (precio: number) => {
-    return (precio * 0.85).toFixed(2)
+    return (precio * 0.95).toFixed(2)
   }
 
   const handlePedirWhatsApp = (prod: Producto) => {
     const telefonoWhatsApp = "51999999999" // Teléfono comercial de MAFER-G
-    const textoCupon = couponCode ? `\n*Cupón de Descuento Activo:* ${couponCode} (15% OFF)` : ""
+    const textoCupon = couponCode ? `\n*Cupón de Descuento Activo:* ${couponCode} (5% OFF)` : ""
     const precioFinal = mostrarDescuento ? calcularPrecioConDescuento(prod.precio || 0) : (prod.precio || 0).toFixed(2)
     
     const mensaje = `Hola MAFER-G, me gustaría realizar un pedido de la siguiente prenda de su catálogo:\n\n` +
@@ -79,7 +79,7 @@ export function CatalogoView({
               <span className="text-2xl">🎁</span>
               <div className="text-left">
                 <p className="text-[10px] font-extrabold tracking-[0.15em] text-accent-dark uppercase">Beneficio de Fidelidad</p>
-                <p className="text-sm font-extrabold text-primary">¡15% de Descuento Activo!</p>
+                <p className="text-sm font-extrabold text-primary">¡5% de Descuento Activo!</p>
                 <p className="text-[11px] text-secondary leading-normal">Muestra este código al realizar tu pedido manual o por WhatsApp.</p>
               </div>
             </div>
