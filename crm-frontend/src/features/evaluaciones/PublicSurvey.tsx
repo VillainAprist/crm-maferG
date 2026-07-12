@@ -692,11 +692,21 @@ export function PublicSurvey({
             {resultado?.mensaje && (
               <p className="text-xs text-secondary bg-gray-50 border border-border-light p-3.5 rounded-xl leading-relaxed text-center font-medium">{resultado.mensaje}</p>
             )}
+
+            {resultado?.codigoCupon && (
+              <div className="border-2 border-dashed border-[#7cb9aa] rounded-2xl p-5 bg-[#f4fffb] shadow-sm transform transition-all hover:scale-[1.02] duration-300">
+                <p className="text-[10px] text-accent font-extrabold uppercase mb-2 tracking-wider text-center">Tu cupón de fidelización</p>
+                <p className="font-mono font-extrabold text-2xl text-[#227e69] tracking-widest bg-white py-2.5 rounded-xl border border-[#c4e6dc] shadow-inner select-all text-center">
+                  {resultado.codigoCupon}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-2 text-center font-medium">Válido por 30 días en tu próxima compra</p>
+              </div>
+            )}
             
             <div className="space-y-3 pt-2">
               <button
                 className="w-full py-3.5 rounded-full bg-primary text-white font-extrabold uppercase tracking-wider cursor-pointer hover:bg-primary-hover active:scale-[0.98] transition-all shadow-md shadow-primary/10 flex items-center justify-center gap-2"
-                onClick={() => onNavigateToCatalog(null)}
+                onClick={() => onNavigateToCatalog(resultado?.codigoCupon || null)}
               >
                 Ver Catálogo de Productos 👕
               </button>
@@ -725,19 +735,29 @@ export function PublicSurvey({
             {resultado?.mensaje && (
               <p className="text-xs text-secondary bg-red-50/50 border border-red-100 p-3.5 rounded-xl leading-relaxed text-center font-medium">{resultado.mensaje}</p>
             )}
+
+            {resultado?.codigoCupon && (
+              <div className="border-2 border-dashed border-[#7cb9aa] rounded-2xl p-5 bg-[#f4fffb] shadow-sm transform transition-all hover:scale-[1.02] duration-300">
+                <p className="text-[10px] text-accent font-extrabold uppercase mb-2 tracking-wider text-center">Tu cupón de fidelización</p>
+                <p className="font-mono font-extrabold text-2xl text-[#227e69] tracking-widest bg-white py-2.5 rounded-xl border border-[#c4e6dc] shadow-inner select-all text-center">
+                  {resultado.codigoCupon}
+                </p>
+                <p className="text-[10px] text-gray-400 mt-2 text-center font-medium">Válido por 30 días en tu próxima compra</p>
+              </div>
+            )}
             
             <div className="space-y-3 pt-2">
               <a
-                href={`https://wa.me/51999999999?text=Hola,%20califiqu%C3%A9%20el%20lote%20${loteInfo?.codigoLote || 'N/A'}%20de%20la%20prenda%20${loteInfo?.nombrePrenda || 'Textil'}%20con%20una%20nota%20baja%20y%20me%20gustar%C3%ADa%20ser%20atendido.`}
+                href={`https://wa.me/51970767654?text=Hola,%20califiqu%C3%A9%20el%20lote%20${loteInfo?.codigoLote || 'N/A'}%20de%20la%20prenda%20${loteInfo?.nombrePrenda || 'Textil'}%20con%20una%20nota%20baja%20y%20me%20gustar%C3%ADa%20ser%20atendido.`}
                 target="_blank"
                 rel="noreferrer"
-                className="w-full py-3.5 rounded-full bg-[#25D366] text-white font-extrabold uppercase tracking-wider cursor-pointer hover:opacity-95 active:scale-[0.98] transition-all shadow-md shadow-green-500/20 flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-full bg-[#25D366] text-white text-xs font-extrabold uppercase tracking-wider cursor-pointer hover:opacity-95 active:scale-[0.98] transition-all shadow-md shadow-green-500/20 flex items-center justify-center gap-2 text-center leading-normal"
               >
                 💬 Contactar Soporte por WhatsApp
               </a>
               <button
                 className="w-full py-3 rounded-full border border-border-primary text-secondary font-bold text-sm cursor-pointer hover:bg-gray-50 transition-all duration-300"
-                onClick={() => onNavigateToCatalog(null)}
+                onClick={() => onNavigateToCatalog(resultado?.codigoCupon || null)}
               >
                 Ver Catálogo de Colección
               </button>
