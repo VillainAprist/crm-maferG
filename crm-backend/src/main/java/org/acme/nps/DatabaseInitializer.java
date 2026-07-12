@@ -117,6 +117,45 @@ public class DatabaseInitializer {
                 stmt.execute("UPDATE usuario SET activo = TRUE WHERE username IN ('admin', 'operador', 'soporte', 'ventas')");
                 LOG.info("Cost tracking and security tables and columns checked/created successfully.");
 
+                // 1. Limpieza de datos de prueba erróneos (Jairo)
+                stmt.execute("DELETE FROM cupon_fidelizacion WHERE id_evaluacion IN (" +
+                             "  SELECT id_evaluacion FROM evaluacion_nps e " +
+                             "  JOIN cliente c ON e.id_cliente = c.id_cliente " +
+                             "  WHERE c.email = 'jairopequeñin@gmail.com' OR c.nombre_razon_social = 'Jairo chiquita bellaca'" +
+                             ")");
+                stmt.execute("DELETE FROM alerta_calidad WHERE id_evaluacion IN (" +
+                             "  SELECT id_evaluacion FROM evaluacion_nps e " +
+                             "  JOIN cliente c ON e.id_cliente = c.id_cliente " +
+                             "  WHERE c.email = 'jairopequeñin@gmail.com' OR c.nombre_razon_social = 'Jairo chiquita bellaca'" +
+                             ")");
+                stmt.execute("DELETE FROM evaluacion_nps WHERE id_cliente IN (" +
+                             "  SELECT id_cliente FROM cliente " +
+                             "  WHERE email = 'jairopequeñin@gmail.com' OR nombre_razon_social = 'Jairo chiquita bellaca'" +
+                             ")");
+                stmt.execute("DELETE FROM historial_reconocimiento WHERE id_cliente IN (" +
+                             "  SELECT id_cliente FROM cliente " +
+                             "  WHERE email = 'jairopequeñin@gmail.com' OR nombre_razon_social = 'Jairo chiquita bellaca'" +
+                             ")");
+                stmt.execute("DELETE FROM cliente_b2c WHERE id_cliente IN (" +
+                             "  SELECT id_cliente FROM cliente " +
+                             "  WHERE email = 'jairopequeñin@gmail.com' OR nombre_razon_social = 'Jairo chiquita bellaca'" +
+                             ")");
+                stmt.execute("DELETE FROM cliente WHERE email = 'jairopequeñin@gmail.com' OR nombre_razon_social = 'Jairo chiquita bellaca'");
+                LOG.info("Test/joke data for 'Jairo chiquita bellaca' cleaned up successfully.");
+
+                // 2. Crear restricción única sobre id_venta en evaluacion_nps si no existe
+                boolean constraintExists = false;
+                try (ResultSet rs = stmt.executeQuery(
+                        "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_evaluacion_venta')")) {
+                    if (rs.next()) {
+                        constraintExists = rs.getBoolean(1);
+                    }
+                }
+                if (!constraintExists) {
+                    stmt.execute("ALTER TABLE evaluacion_nps ADD CONSTRAINT uq_evaluacion_venta UNIQUE (id_venta)");
+                    LOG.info("Unique constraint uq_evaluacion_venta created successfully on table evaluacion_nps.");
+                }
+
                 // Convertir contraseñas legacy a BCrypt hashes
                 try (ResultSet rs = stmt.executeQuery("SELECT id_usuario, username, password_hash FROM usuario")) {
                     java.util.List<Object[]> usersToUpdate = new java.util.ArrayList<>();

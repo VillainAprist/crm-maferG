@@ -70,6 +70,19 @@ public class NpsPublicService {
                 }
             }
 
+            // Validar que esta venta no haya sido evaluada previamente (evita duplicidad y abusos)
+            if (idVenta != null) {
+                try (PreparedStatement ps = conn.prepareStatement(
+                        "SELECT COUNT(*) FROM evaluacion_nps WHERE id_venta = ?")) {
+                    ps.setLong(1, idVenta);
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next() && rs.getInt(1) > 0) {
+                            throw new NpsException("Este ticket o venta ya ha sido calificado previamente.");
+                        }
+                    }
+                }
+            }
+
             // 2. Obtener o crear Cliente (solo si idCliente no ha sido resuelto por la venta)
             if (idCliente == -1) {
                 String email;
