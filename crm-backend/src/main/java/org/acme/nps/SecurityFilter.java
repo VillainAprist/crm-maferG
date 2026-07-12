@@ -30,6 +30,11 @@ public class SecurityFilter implements ContainerRequestFilter {
                 return;
             }
 
+            // Permitir la descarga publica de codigos QR (etiquetas y cupones)
+            if (path.endsWith("/qr") && "GET".equalsIgnoreCase(requestContext.getMethod())) {
+                return;
+            }
+
             String authHeader = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
             
             if (authHeader == null || !authHeader.startsWith("Bearer ")) {

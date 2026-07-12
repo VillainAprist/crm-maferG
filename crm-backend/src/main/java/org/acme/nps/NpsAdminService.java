@@ -651,7 +651,7 @@ public class NpsAdminService {
 
     public List<UsuarioDto> obtenerUsuarios() {
         List<UsuarioDto> usuarios = new ArrayList<>();
-        String sql = "SELECT id_usuario, nombres, username, activo FROM usuario ORDER BY nombres ASC";
+        String sql = "SELECT id_usuario, nombres, username, activo FROM usuario WHERE username NOT IN ('admin', 'operador', 'soporte', 'ventas') ORDER BY nombres ASC";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
