@@ -20,8 +20,8 @@ function App() {
   const [view, setView] = useState<'survey' | 'catalog' | 'admin'>(initialView)
   const [couponCode, setCouponCode] = useState<string | null>(null)
 
-  // Mostrar botón volver solo si es un token de código QR real de venta (no el de demostración offline)
-  const showBackButton = !!urlToken && urlToken !== '3fa85f64-5717-4562-b3fc-2c963f66afa6'
+  // Mostrar botón volver si el usuario accedió con un código QR (token)
+  const showBackButton = !!urlToken
 
   return (
     <div className="min-h-svh flex items-center justify-center p-4 sm:p-6 transition-all">

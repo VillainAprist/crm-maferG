@@ -1,10 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
-import type { PantallaPublica, NpsClasificacion, ApiResponse, LoteResumen } from '../../types'
+import type { PantallaPublica, ApiResponse, LoteResumen } from '../../types'
 import { API_BASE } from '../../config'
-
-function generarCodigoCuponDemo(): string {
-  return 'MAFERG-DEMO' + Math.random().toString(36).slice(2, 5).toUpperCase()
-}
 
 export function PublicSurvey({
   setAdminMode,
@@ -16,10 +12,8 @@ export function PublicSurvey({
   const params = useMemo(() => new URLSearchParams(window.location.search), [])
   const urlToken = params.get('token')
 
-  const [token, setToken] = useState<string | null>(urlToken || '3fa85f64-5717-4562-b3fc-2c963f66afa6')
+  const [token, setToken] = useState<string | null>(urlToken)
   const [manualToken, setManualToken] = useState('')
-  const [cargandoDemo, setCargandoDemo] = useState(false)
-  const [modoDemo, setModoDemo] = useState(!urlToken)
 
   const [pantalla, setPantalla] = useState<PantallaPublica>('bienvenida')
 
@@ -73,22 +67,8 @@ export function PublicSurvey({
           setPantalla('token-invalido')
         }
       } catch {
-        // En caso de caída de backend, si estamos en modo demo fallback offline:
-        if (token === '3fa85f64-5717-4562-b3fc-2c963f66afa6') {
-          setLoteInfo({
-            codigoLote: 'LOTE-2026-024',
-            nombrePrenda: 'Conjunto Infantil Rayas (Demo)',
-            sku: 'SKU-SET-001',
-            categoriaInfantil: 'Conjuntos',
-            fechaConfeccion: '2026-06-18',
-            yaRespondido: false,
-            cantidad: 24,
-            procesos: []
-          })
-          setPantalla('bienvenida')
-        } else {
-          setPantalla('token-invalido')
-        }
+        setPantalla('token-invalido')
+        setError('Error de conexión con el servidor. No se pudieron cargar los datos.')
       } finally {
         setValidandoLote(false)
       }
@@ -96,18 +76,6 @@ export function PublicSurvey({
 
     validarYObtenerResumen()
   }, [token])
-
-  function modoDemoFallback() {
-    setModoDemo(true)
-    const fakeToken = '3fa85f64-5717-4562-b3fc-2c963f66afa6'
-    setToken(fakeToken)
-    window.history.replaceState(null, '', `?token=${fakeToken}`)
-    setPantalla('bienvenida')
-  }
-
-
-
-
 
   async function reiniciarFormulario() {
     setPaso(1)
@@ -151,61 +119,6 @@ export function PublicSurvey({
     }
   }
 
-
-  async function cargarTokenDemo() {
-    setCargandoDemo(true)
-    setError('')
-    try {
-      const res = await fetch(`${API_BASE}/api/nps/public/demo-token`)
-      if (res.ok) {
-        const data = (await res.json()) as { token_qr: string }
-        const demoToken = data.token_qr
-        setToken(demoToken)
-        setModoDemo(false)
-        window.history.replaceState(null, '', `?token=${demoToken}`)
-        setPantalla('bienvenida')
-      } else {
-        modoDemoFallback()
-      }
-    } catch {
-      modoDemoFallback()
-    } finally {
-      setCargandoDemo(false)
-    }
-  }
-
-
-  function ejecutarModoDemoOffline() {
-    setModoDemo(true)
-    const clasificacion: NpsClasificacion = puntuacion !== null ? getClasificacion(puntuacion) : 'PASIVO';
-    const codigoCupon = (clasificacion === 'PROMOTOR' && aceptoDatos) ? generarCodigoCuponDemo() : null
-    const mensaje = clasificacion === 'DETRACTOR'
-      ? 'Gracias por tu feedback. Abrimos una alerta de calidad para atender tu caso.'
-      : clasificacion === 'PROMOTOR'
-      ? (aceptoDatos
-        ? 'Gracias por recomendarnos. Generamos tu cupon de fidelizacion.'
-        : 'Gracias por recomendarnos. Tu opinion nos ayuda a seguir mejorando.')
-      : 'Gracias por tu evaluacion. Seguimos mejorando nuestros productos.'
-    
-    const mock: ApiResponse = {
-      idCliente: 1,
-      idEvaluacion: 1,
-      clasificacion,
-      alertaCreada: clasificacion === 'DETRACTOR',
-      cuponCreado: clasificacion === 'PROMOTOR' && aceptoDatos,
-      codigoCupon,
-      mensaje,
-    }
-    setResultado(mock)
-    if (clasificacion === 'DETRACTOR') {
-      setPantalla('detractor')
-    } else if (clasificacion === 'PASIVO') {
-      setPantalla('pasivo')
-    } else {
-      setPantalla('promotor')
-    }
-  }
-
   async function enviarEncuesta() {
     if (puntuacion === null) return
     setError('')
@@ -244,17 +157,13 @@ export function PublicSurvey({
         setPantalla('promotor')
       }
     } catch {
-      ejecutarModoDemoOffline()
+      setError('Error de conexión. No se pudo enviar la encuesta.')
     } finally {
       setEnviando(false)
     }
   }
 
-  function getClasificacion(score: number): NpsClasificacion {
-    if (score <= 4) return 'DETRACTOR';
-    if (score <= 7) return 'PASIVO';
-    return 'PROMOTOR';
-  }
+
 
   function scoreColor(score: number): string {
     if (score <= 4) return 'bg-red-500 text-white border-red-500 shadow-sm shadow-red-200';
@@ -345,21 +254,8 @@ export function PublicSurvey({
             </p>
 
             <div className="border-t border-border-light pt-5 mt-2 space-y-4">
-              <button
-                className="w-full py-3.5 rounded-full bg-primary text-white font-bold cursor-pointer hover:bg-primary-dark transition-all duration-300 shadow-md shadow-primary/10 flex items-center justify-center gap-2"
-                onClick={cargarTokenDemo}
-                disabled={cargandoDemo}
-              >
-                {cargandoDemo ? 'Cargando Demo...' : 'Usar token de demostración'}
-              </button>
-
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-xs text-gray-400 font-medium">o ingresa el código</span>
-                <div className="flex-1 h-px bg-gray-200" />
-              </div>
-
               <div className="text-left space-y-2">
+                <span className="text-xs font-bold text-secondary">Ingresar código de forma manual</span>
                 <div className="flex gap-2">
                   <input
                     value={manualToken}
@@ -388,13 +284,7 @@ export function PublicSurvey({
         {!validandoLote && !loteYaRespondido && pantalla === 'bienvenida' && (
           <div className="animate-fadeIn space-y-5 flex-1 flex flex-col justify-between">
             <div className="space-y-4">
-              {modoDemo && (
-                <div className="text-center">
-                  <span className="inline-block text-[10px] font-extrabold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full shadow-sm">
-                    MODO DEMO (SIN CONEXIÓN)
-                  </span>
-                </div>
-              )}
+
               
               {loteInfo ? (
                 <div className="border border-border-light bg-gradient-to-br from-primary-light to-white rounded-2xl p-5 text-left shadow-sm">
