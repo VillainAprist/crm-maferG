@@ -60,7 +60,6 @@ export function LotesView({
   const [operacionSeleccionada, setOperacionSeleccionada] = useState('Costura')
   const [registrandoProceso, setRegistrandoProceso] = useState(false)
 
-  const [copiadoLote, setCopiadoLote] = useState<string | null>(null)
   const [fechaFiltro, setFechaFiltro] = useState<'TODO' | 'HOY' | 'SEMANA' | 'MES'>('TODO')
 
   // Auto-expandir si hay exactamente un lote en la lista (para uso en modal)
@@ -296,6 +295,25 @@ export function LotesView({
     }
   }
 
+  async function handleDeleteProceso(idProceso: number, idLote: number) {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar esta operación del historial de confección?')) return
+    try {
+      const res = await fetch(`${API_BASE}/api/nps/admin/lotes/procesos/${idProceso}`, {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        await refreshProcesos(idLote)
+        await fetchLotes() // Recargar costos en la lista general
+      } else {
+        const errorText = await res.text()
+        alert('Error al eliminar la operación: ' + errorText)
+      }
+    } catch (e) {
+      console.error(e)
+      alert('Error de conexión al eliminar la operación.')
+    }
+  }
+
   async function handleAddProceso(idLote: number, e: React.FormEvent) {
     e.preventDefault()
     if (!idOperador || !operacionSeleccionada) return
@@ -330,98 +348,12 @@ export function LotesView({
 
       // Refresh log
       await refreshProcesos(idLote)
+      await fetchLotes()
     } catch {
       setProcesoError((prev) => ({ ...prev, [idLote]: 'Error de conexión con el servidor.' }))
     } finally {
       setRegistrandoProceso(false)
     }
-  }
-
-  function handlePrintQr(tokenQr: string, codigo: string, prenda: string, cant: number, stock: number) {
-    const printWindow = window.open('', '_blank')
-    if (!printWindow) return
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Etiqueta QR Lote (Legacy) ${codigo}</title>
-          <style>
-            body {
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-              text-align: center;
-              padding: 40px;
-              margin: 0;
-              background-color: #ffffff;
-            }
-            .label-card {
-              border: 3px double #1e4a40;
-              padding: 30px;
-              display: inline-block;
-              border-radius: 16px;
-              background: #fafcfb;
-              box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            }
-            h1 {
-              font-size: 20px;
-              margin: 0 0 15px 0;
-              color: #1e4a40;
-              text-transform: uppercase;
-              letter-spacing: 1px;
-              border-bottom: 2px solid #e2ece9;
-              padding-bottom: 10px;
-            }
-            .info {
-              font-size: 15px;
-              margin: 8px 0;
-              color: #2d5a50;
-              text-align: left;
-            }
-            .info strong {
-              color: #14342e;
-            }
-            img {
-              width: 220px;
-              height: 220px;
-              margin: 20px 0;
-              border: 1px solid #cce2db;
-              border-radius: 8px;
-              padding: 5px;
-              background: white;
-            }
-            .footer-text {
-              font-size: 11px;
-              color: #6a8e85;
-              margin-top: 15px;
-              font-style: italic;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="label-card">
-            <h1>MAFER-G Lote Legacy</h1>
-            <div class="info"><strong>Lote:</strong> ${codigo}</div>
-            <div class="info"><strong>Prenda:</strong> ${prenda}</div>
-            <div class="info"><strong>Cant. Inicial:</strong> ${cant} uds. | <strong>Stock:</strong> ${stock}</div>
-            <img src="${API_BASE}/api/nps/admin/etiqueta/${tokenQr}/qr" alt="QR Code" />
-            <div class="footer-text">Escanea para calificar este lote (Código de prueba)</div>
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 500);
-            };
-          </script>
-        </body>
-      </html>
-    `)
-    printWindow.document.close()
-  }
-
-  function handleCopyLink(tokenQr: string, codigo: string) {
-    const link = `${window.location.origin}/?token=${tokenQr}`
-    navigator.clipboard.writeText(link).then(() => {
-      setCopiadoLote(codigo)
-      setTimeout(() => setCopiadoLote(null), 2000)
-    })
   }
 
   return (
@@ -774,7 +706,18 @@ export function LotesView({
                                 
                                 <div className="bg-white border border-border-light rounded-xl p-3 shadow-xs hover:border-accent/30 transition-colors">
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className="text-xs font-extrabold text-primary">{p.operacion}</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-xs font-extrabold text-primary">{p.operacion}</span>
+                                      {userRole === 'admin' && (
+                                        <button
+                                          onClick={() => handleDeleteProceso(p.idProceso, lote.idLote)}
+                                          className="text-red-500 hover:text-red-700 font-extrabold text-[10px] cursor-pointer hover:bg-red-50 p-1 rounded-md transition-colors"
+                                          title="Eliminar esta operación"
+                                        >
+                                          🗑️
+                                        </button>
+                                      )}
+                                    </div>
                                     <span className="text-[9px] text-gray-400 font-mono font-medium bg-gray-50 px-1.5 py-0.5 rounded">{p.fechaRegistro}</span>
                                   </div>
                                   <p className="text-[11px] text-secondary mt-1">
@@ -819,23 +762,6 @@ export function LotesView({
                           </div>
                         )}
 
-                        {/* Legacy Actions for Admin */}
-                        {userRole === 'admin' && (
-                          <div className="flex gap-2 pt-4 border-t border-border-light mt-4">
-                            <button
-                              onClick={() => handlePrintQr(lote.tokenQr, lote.codigoLote, lote.nombrePrenda, lote.cantidad, lote.stock)}
-                              className="px-3 py-1.5 rounded-lg bg-primary-light text-primary text-xs font-bold hover:bg-[#d0ded9] transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-                            >
-                              🖨️ Imprimir QR de Lote
-                            </button>
-                            <button
-                              onClick={() => handleCopyLink(lote.tokenQr, lote.codigoLote)}
-                              className="px-3 py-1.5 rounded-lg bg-gray-50 text-secondary border border-border-light text-xs font-bold hover:bg-gray-100 transition-all cursor-pointer flex items-center gap-1 shadow-xs"
-                            >
-                              {copiadoLote === lote.codigoLote ? '✅ Copiado' : '🔗 Copiar Enlace QR'}
-                            </button>
-                          </div>
-                        )}
                       </div>
 
                       {/* Columna de Costos (Solo Admin) */}

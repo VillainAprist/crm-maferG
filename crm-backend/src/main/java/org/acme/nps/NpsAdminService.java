@@ -1335,4 +1335,58 @@ public class NpsAdminService {
         }
         return logs;
     }
+
+    @Transactional
+    public void eliminarProceso(long idProceso) {
+        try (Connection conn = dataSource.getConnection()) {
+            String selectSql = "SELECT operacion, id_lote FROM lote_proceso WHERE id_proceso = ?";
+            String operacion = "";
+            long idLote = -1;
+            try (PreparedStatement psSel = conn.prepareStatement(selectSql)) {
+                psSel.setLong(1, idProceso);
+                try (ResultSet rs = psSel.executeQuery()) {
+                    if (rs.next()) {
+                        operacion = rs.getString(1);
+                        idLote = rs.getLong(2);
+                    }
+                }
+            }
+
+            if (idLote != -1) {
+                String deleteSql = "DELETE FROM lote_proceso WHERE id_proceso = ?";
+                try (PreparedStatement psDel = conn.prepareStatement(deleteSql)) {
+                    psDel.setLong(1, idProceso);
+                    psDel.executeUpdate();
+                }
+                
+                // Buscar el codigo del lote
+                String selectLoteSql = "SELECT codigo_lote FROM lote_produccion WHERE id_lote = ?";
+                String codigoLote = "";
+                try (PreparedStatement psLote = conn.prepareStatement(selectLoteSql)) {
+                    psLote.setLong(1, idLote);
+                    try (ResultSet rsLote = psLote.executeQuery()) {
+                        if (rsLote.next()) {
+                            codigoLote = rsLote.getString(1);
+                        }
+                    }
+                }
+
+                registrarLogSistema(conn, 1, "ELIMINAR_PROCESO", "Se elimino el proceso '" + operacion + "' del lote " + (codigoLote.isEmpty() ? idLote : codigoLote));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error al eliminar proceso del lote: " + e.getMessage(), e);
+        }
+    }
+
+    private void registrarLogSistema(Connection conn, long idUsuario, String accion, String detalle) {
+        String sql = "INSERT INTO log_sistema (id_usuario, accion, detalle) VALUES (?, ?, ?)";
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, idUsuario);
+            ps.setString(2, accion);
+            ps.setString(3, detalle);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            System.err.println("No se pudo registrar log de auditoria: " + e.getMessage());
+        }
+    }
 }

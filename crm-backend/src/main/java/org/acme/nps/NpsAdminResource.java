@@ -386,5 +386,18 @@ public class NpsAdminResource {
                     .build();
         }
     }
+
+    @DELETE
+    @Path("/lotes/procesos/{idProceso}")
+    public Response eliminarProcesoLote(@PathParam("idProceso") long idProceso) {
+        try {
+            npsAdminService.eliminarProceso(idProceso);
+            return Response.ok(Map.of("mensaje", "Proceso eliminado exitosamente.")).build();
+        } catch (Exception e) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(Map.of("error", e.getMessage()))
+                    .build();
+        }
+    }
 }
 
