@@ -4,9 +4,13 @@ import { API_BASE } from '../../config'
 
 export function CatalogoView({
   onBack,
+  onNavigateToAdmin,
+  showBackButton = false,
   couponCode
 }: {
   onBack: () => void
+  onNavigateToAdmin: () => void
+  showBackButton?: boolean
   couponCode?: string | null
 }) {
   const [productos, setProductos] = useState<Producto[]>([])
@@ -65,23 +69,23 @@ export function CatalogoView({
   }
 
   return (
-    <div className="min-h-screen w-full bg-[var(--color-primary-light)] text-[var(--color-primary)] overflow-x-clip px-4 py-6 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full max-w-4xl mx-auto animate-fadeIn font-sans text-primary">
+      <div className="space-y-6">
         
         {/* Banner del cupón si el cliente es promotor */}
         {couponCode && (
-          <div className="bg-[#FFE4E1] border border-[#555555]/14 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-pulse-slow">
+          <div className="bg-accent-light border border-accent/25 rounded-2xl p-4 flex items-center justify-between shadow-sm animate-pulse-slow">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🎁</span>
               <div className="text-left">
-                <p className="text-[10px] font-bold tracking-[0.15em] text-[#555555]/60 uppercase">Beneficio de Fidelidad</p>
-                <p className="text-sm font-extrabold text-[#555555]">¡15% de Descuento Activo!</p>
-                <p className="text-[11px] text-[#555555]/80 leading-normal">Muestra este código al realizar tu pedido manual o por WhatsApp.</p>
+                <p className="text-[10px] font-extrabold tracking-[0.15em] text-accent-dark uppercase">Beneficio de Fidelidad</p>
+                <p className="text-sm font-extrabold text-primary">¡15% de Descuento Activo!</p>
+                <p className="text-[11px] text-secondary leading-normal">Muestra este código al realizar tu pedido manual o por WhatsApp.</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[10px] font-bold text-[#555555]/60 uppercase">Código</p>
-              <span className="font-mono font-extrabold text-sm bg-white/70 px-2 py-1 rounded border border-[#555555]/20 select-all">
+              <p className="text-[10px] font-bold text-secondary/60 uppercase">Código</p>
+              <span className="font-mono font-extrabold text-sm bg-white border border-accent/30 px-2 py-1 rounded select-all text-accent-dark shadow-inner">
                 {couponCode}
               </span>
             </div>
@@ -89,13 +93,23 @@ export function CatalogoView({
         )}
 
         {/* Cabecera del catálogo */}
-        <header className="flex items-center justify-between pb-4 border-b border-[#555555]/10">
-          <button
-            onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#555555]/10 bg-white/60 hover:bg-white transition-all text-xs font-bold cursor-pointer"
-          >
-            ← Volver
-          </button>
+        <header className="flex items-center justify-between p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-border-primary shadow-sm mb-4">
+          <div className="flex gap-2">
+            {showBackButton && (
+              <button
+                onClick={onBack}
+                className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-primary bg-white text-secondary hover:text-primary hover:bg-primary-light transition-all text-xs font-bold cursor-pointer"
+              >
+                ← Volver
+              </button>
+            )}
+            <button
+              onClick={onNavigateToAdmin}
+              className="flex items-center gap-2 px-4 py-2 rounded-full border border-border-primary bg-white text-secondary hover:text-primary hover:bg-primary-light transition-all text-xs font-bold cursor-pointer"
+            >
+              🔑 Acceso Personal
+            </button>
+          </div>
           <div className="flex items-center gap-2.5">
             <img
               src="/maferG-logo/mafergLOGO.png"
@@ -103,8 +117,8 @@ export function CatalogoView({
               className="h-8 w-auto object-contain"
             />
             <div className="text-left hidden xs:block">
-              <span className="text-[10px] font-bold tracking-[0.25em] text-[#555555]/60 uppercase block">MAFER-G</span>
-              <span className="text-xs font-bold text-[#555555]/80">Colección Infantil Premium</span>
+              <span className="text-[10px] font-extrabold tracking-[0.25em] text-accent uppercase block">MAFER-G</span>
+              <span className="text-xs font-bold text-secondary">Colección Infantil Premium</span>
             </div>
           </div>
         </header>
@@ -112,9 +126,9 @@ export function CatalogoView({
         {/* Listado Principal o Detalle de Producto */}
         {!productoDetalle ? (
           <div className="space-y-6">
-            <div className="text-left space-y-2">
-              <h1 className="text-3xl font-semibold tracking-[-0.04em] text-[#555555]">Catálogo de Colección</h1>
-              <p className="text-xs text-[#555555]/70">Explora nuestras prendas finas tejidas con el mejor algodón para bebés y niños.</p>
+            <div className="text-left space-y-1 bg-white/90 backdrop-blur-md p-5 rounded-2xl border border-border-primary shadow-sm">
+              <h1 className="text-2xl font-extrabold text-primary">Catálogo de Colección</h1>
+              <p className="text-xs text-secondary">Explora nuestras prendas finas tejidas con el mejor algodón para bebés y niños.</p>
             </div>
 
             {/* Categorías (Scroll Horizontal) */}
@@ -123,10 +137,10 @@ export function CatalogoView({
                 <button
                   key={cat}
                   onClick={() => setCategoriaActiva(cat)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
+                  className={`px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
                     categoriaActiva === cat
-                      ? 'bg-[#555555] text-[#EDEAE0] border-[#555555]'
-                      : 'bg-white/40 border-[#555555]/10 text-[#555555]/70 hover:bg-white/80'
+                      ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10'
+                      : 'bg-white border-border-primary text-secondary hover:bg-primary-light hover:text-primary'
                   }`}
                 >
                   {cat.charAt(0) + cat.slice(1).toLowerCase()}
@@ -135,11 +149,15 @@ export function CatalogoView({
             </div>
 
             {loading ? (
-              <div className="text-center py-12 text-gray-500 font-semibold">Cargando catálogo dinámico...</div>
+              <div className="text-center py-12 text-secondary font-semibold bg-white/80 rounded-3xl border border-border-primary">
+                Cargando catálogo dinámico...
+              </div>
             ) : error ? (
-              <div className="text-center py-12 text-red-500 font-semibold">{error}</div>
+              <div className="text-center py-12 text-red-500 font-semibold bg-white/80 rounded-3xl border border-border-primary">
+                {error}
+              </div>
             ) : productosFiltrados.length === 0 ? (
-              <div className="text-center py-12 text-gray-400 font-semibold border-2 border-dashed border-[#555555]/10 rounded-3xl">
+              <div className="text-center py-12 text-secondary/60 font-semibold border-2 border-dashed border-border-primary bg-white/80 rounded-3xl">
                 No hay prendas disponibles en esta categoría.
               </div>
             ) : (
@@ -149,9 +167,9 @@ export function CatalogoView({
                   <div
                     key={prod.id}
                     onClick={() => setProductoDetalle(prod)}
-                    className="bg-white/50 border border-[#555555]/10 rounded-[28px] overflow-hidden cursor-pointer hover:bg-white hover:shadow-[0_16px_36px_rgba(85,85,85,0.06)] transition-all duration-300 group text-left"
+                    className="bg-white/90 border border-border-primary rounded-[28px] overflow-hidden cursor-pointer hover:bg-white hover:shadow-[0_16px_36px_rgba(25,52,44,0.08)] transition-all duration-300 group text-left"
                   >
-                    <div className="h-64 overflow-hidden relative bg-[#e4ddce]">
+                    <div className="h-64 overflow-hidden relative bg-primary-light">
                       {prod.imagenUrl ? (
                         <img
                           src={prod.imagenUrl}
@@ -160,28 +178,28 @@ export function CatalogoView({
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-4xl bg-[#e4ddce]">👕</div>
+                        <div className="w-full h-full flex items-center justify-center text-4xl bg-primary-light">👕</div>
                       )}
-                      <span className="absolute top-3 right-3 text-[9px] font-bold tracking-[0.1em] bg-[#555555] text-[#EDEAE0] px-2.5 py-0.5 rounded-full uppercase">
+                      <span className="absolute top-3 right-3 text-[9px] font-extrabold tracking-[0.1em] bg-accent text-white px-2.5 py-0.5 rounded-full uppercase">
                         {prod.categoriaInfantil || 'Colección'}
                       </span>
                     </div>
                     <div className="p-5 space-y-2">
-                      <p className="text-[10px] font-semibold text-[#555555]/50 tracking-wider uppercase font-mono">{prod.sku}</p>
+                      <p className="text-[10px] font-semibold text-secondary/50 tracking-wider uppercase font-mono">{prod.sku}</p>
                       <div className="flex justify-between items-start">
-                        <h3 className="font-semibold text-lg text-[#555555] leading-snug truncate pr-2">{prod.nombrePrenda}</h3>
+                        <h3 className="font-semibold text-lg text-primary leading-snug truncate pr-2">{prod.nombrePrenda}</h3>
                         <div className="text-right flex-shrink-0">
                           {mostrarDescuento ? (
                             <div className="flex flex-col items-end leading-none">
                               <span className="text-[10px] text-gray-400 line-through">S/ {prod.precio?.toFixed(2)}</span>
-                              <span className="font-extrabold text-base text-emerald-600">S/ {calcularPrecioConDescuento(prod.precio || 0)}</span>
+                              <span className="font-extrabold text-base text-accent-dark">S/ {calcularPrecioConDescuento(prod.precio || 0)}</span>
                             </div>
                           ) : (
-                            <span className="font-extrabold text-base text-[#555555]">S/ {prod.precio?.toFixed(2)}</span>
+                            <span className="font-extrabold text-base text-primary">S/ {prod.precio?.toFixed(2)}</span>
                           )}
                         </div>
                       </div>
-                      <p className="text-xs text-[#555555]/70 line-clamp-2 leading-relaxed">
+                      <p className="text-xs text-secondary line-clamp-2 leading-relaxed">
                         {prod.descripcion || 'Sin descripción disponible para esta prenda de colección.'}
                       </p>
                     </div>
@@ -192,10 +210,10 @@ export function CatalogoView({
           </div>
         ) : (
           /* Vista de Detalle */
-          <div className="bg-white/80 border border-[#555555]/10 rounded-[32px] overflow-hidden shadow-sm animate-fadeIn text-left">
+          <div className="bg-white/95 border border-border-primary rounded-[32px] overflow-hidden shadow-md animate-fadeIn text-left">
             <div className="grid grid-cols-1 md:grid-cols-2">
               {/* Imagen Grande */}
-              <div className="h-[400px] md:h-full min-h-[300px] bg-[#e4ddce] relative">
+              <div className="h-[400px] md:h-full min-h-[300px] bg-primary-light relative">
                 {productoDetalle.imagenUrl ? (
                   <img
                     src={productoDetalle.imagenUrl}
@@ -203,11 +221,11 @@ export function CatalogoView({
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-8xl bg-[#e4ddce]">👕</div>
+                  <div className="w-full h-full flex items-center justify-center text-8xl bg-primary-light">👕</div>
                 )}
                 <button
                   onClick={() => setProductoDetalle(null)}
-                  className="absolute top-4 left-4 grid h-11 w-11 place-items-center rounded-full border border-[#555555]/10 bg-[#EDEAE0]/80 text-[#555555] shadow-md backdrop-blur-sm hover:bg-white transition-all cursor-pointer"
+                  className="absolute top-4 left-4 grid h-10 w-10 place-items-center rounded-full border border-border-primary bg-white/90 text-primary shadow-md backdrop-blur-sm hover:bg-white transition-all cursor-pointer font-bold text-lg"
                 >
                   ←
                 </button>
@@ -216,40 +234,40 @@ export function CatalogoView({
               {/* Detalles */}
               <div className="p-6 md:p-8 flex flex-col justify-between space-y-6">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]/55 block mb-2 font-mono">
+                  <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-accent block mb-2 font-mono">
                     {productoDetalle.categoriaInfantil || 'Colección'} · {productoDetalle.sku}
                   </span>
                   
                   <div className="flex justify-between items-start gap-4 mb-4">
-                    <h1 className="text-2xl font-bold leading-tight text-[#555555]">{productoDetalle.nombrePrenda}</h1>
+                    <h1 className="text-2xl font-bold leading-tight text-primary">{productoDetalle.nombrePrenda}</h1>
                     <div className="text-right flex-shrink-0">
                       {mostrarDescuento ? (
                         <div className="flex flex-col items-end">
                           <span className="text-xs text-gray-400 line-through">S/ {productoDetalle.precio?.toFixed(2)}</span>
-                          <span className="rounded-full bg-emerald-50 border border-emerald-150 px-3.5 py-1.5 text-lg font-bold tracking-tight text-emerald-700">
+                          <span className="rounded-full bg-accent-light border border-accent/20 px-3.5 py-1.5 text-lg font-extrabold tracking-tight text-accent-dark">
                             S/ {calcularPrecioConDescuento(productoDetalle.precio || 0)}
                           </span>
                         </div>
                       ) : (
-                        <span className="rounded-full bg-[#FFE4E1] px-3.5 py-1.5 text-lg font-bold tracking-tight text-[#555555]">
+                        <span className="rounded-full bg-primary-light border border-border-primary px-3.5 py-1.5 text-lg font-extrabold tracking-tight text-primary">
                           S/ {productoDetalle.precio?.toFixed(2)}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <p className="text-[13px] leading-relaxed text-[#555555]/80 border-t border-[#555555]/10 pt-4 mb-6">
+                  <p className="text-[13px] leading-relaxed text-secondary border-t border-border-primary pt-4 mb-6">
                     {productoDetalle.descripcion || 'Fina prenda de colección confeccionada bajo estrictos estándares de control de calidad para asegurar el bienestar de tu bebé.'}
                   </p>
 
-                  <div className="space-y-4 border-t border-[#555555]/10 pt-4">
+                  <div className="space-y-4 border-t border-border-primary pt-4">
                     <div>
-                      <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]/50">Material / Composición</h4>
-                      <p className="text-xs text-[#555555] mt-1 font-medium">{productoDetalle.material || '100% Algodón Pima Peruano'}</p>
+                      <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-secondary/60">Material / Composición</h4>
+                      <p className="text-xs text-primary mt-1 font-medium">{productoDetalle.material || '100% Algodón Pima Peruano'}</p>
                     </div>
                     <div>
-                      <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#555555]/50">Instrucciones de cuidado</h4>
-                      <p className="text-xs text-[#555555] mt-1 italic font-medium">{productoDetalle.cuidados || 'Lavar con agua fría, no usar blanqueador, secar a la sombra.'}</p>
+                      <h4 className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-secondary/60">Instrucciones de cuidado</h4>
+                      <p className="text-xs text-primary mt-1 italic font-medium">{productoDetalle.cuidados || 'Lavar con agua fría, no usar blanqueador, secar a la sombra.'}</p>
                     </div>
                   </div>
                 </div>
@@ -257,13 +275,13 @@ export function CatalogoView({
                 <div className="space-y-2 pt-4">
                   <button
                     onClick={() => handlePedirWhatsApp(productoDetalle)}
-                    className="w-full h-12 bg-emerald-600 text-white hover:bg-emerald-700 rounded-[14px] font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full h-12 bg-emerald-600 text-white hover:bg-emerald-700 rounded-[14px] font-bold text-xs uppercase tracking-wider transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer border-none"
                   >
                     💬 Solicitar Pedido por WhatsApp
                   </button>
                   <button
                     onClick={() => setProductoDetalle(null)}
-                    className="w-full h-11 border border-[#555555]/20 text-[#555555] hover:bg-black/5 rounded-[14px] font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
+                    className="w-full h-11 border border-border-primary text-secondary bg-white hover:bg-gray-50 rounded-[14px] font-bold text-xs uppercase tracking-wider transition-all cursor-pointer"
                   >
                     Volver al Catálogo
                   </button>
@@ -274,25 +292,25 @@ export function CatalogoView({
         )}
 
         {/* Footer solicitado con Redes y Teléfono editable */}
-        <footer className="border-t border-[#555555]/10 pt-8 pb-4 text-center space-y-4">
-          <div className="flex justify-center gap-6 text-sm font-semibold text-[#555555]/70">
-            <a href="https://instagram.com/maferg" target="_blank" rel="noreferrer" className="hover:text-[#555555] transition-colors">
+        <footer className="border-t border-border-primary pt-8 pb-4 text-center space-y-4 bg-white/80 backdrop-blur-md rounded-2xl p-4 border shadow-xs">
+          <div className="flex justify-center gap-6 text-sm font-semibold text-secondary">
+            <a href="https://instagram.com/maferg" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               Instagram
             </a>
             <span>•</span>
-            <a href="https://facebook.com/maferg" target="_blank" rel="noreferrer" className="hover:text-[#555555] transition-colors">
+            <a href="https://facebook.com/maferg" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               Facebook
             </a>
             <span>•</span>
-            <a href="https://tiktok.com/@maferg" target="_blank" rel="noreferrer" className="hover:text-[#555555] transition-colors">
+            <a href="https://tiktok.com/@maferg" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               TikTok
             </a>
           </div>
-          <div className="text-xs text-[#555555]/50 space-y-1">
-            <p className="font-bold text-[#555555]/70">Contacto Comercial / Pedidos:</p>
-            <p className="font-mono text-sm text-[#555555]/80 font-bold">+51 999 999 999</p>
+          <div className="text-xs text-secondary/85 space-y-1">
+            <p className="font-extrabold text-secondary">Contacto Comercial / Pedidos:</p>
+            <p className="font-mono text-sm text-primary font-extrabold">+51 999 999 999</p>
           </div>
-          <p className="text-[10px] text-[#555555]/40 font-bold tracking-wider uppercase">
+          <p className="text-[10px] text-secondary/55 font-bold tracking-wider uppercase">
             © {new Date().getFullYear()} MAFER-G TEXTIL S.A.C.
           </p>
         </footer>

@@ -20,10 +20,8 @@
 body {
   font-family: var(--sans);
   margin: 0;
-  background:
-    radial-gradient(circle at 12% 15%, rgba(243, 255, 249, 0.9) 0%, transparent 40%),
-    radial-gradient(circle at 88% 85%, rgba(249, 242, 234, 0.7) 0%, transparent 35%),
-    #edf2f0;
+  background: url('/background/fondo.png') no-repeat center center fixed;
+  background-size: cover;
   color: #1a2e29;
 }
 
