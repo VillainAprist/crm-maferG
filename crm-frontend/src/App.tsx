@@ -44,7 +44,6 @@ function App() {
       )}
       {view === 'admin' && (
         <AdminDashboard
-          setAdminMode={(mode) => setView(mode ? 'admin' : 'survey')}
           onNavigateToCatalog={() => setView('catalog')}
         />
       )}

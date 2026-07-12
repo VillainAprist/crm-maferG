@@ -9,7 +9,7 @@ import { CatalogoAdminView } from '../catalogo'
 import { RecursosView } from '../recursos'
 import { API_BASE } from '../../config'
 
-export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdminMode: (mode: boolean) => void; onNavigateToCatalog: () => void }) {
+export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: () => void }) {
   const [adminAuth, setAdminAuth] = useState(false)
   const [userInput, setUserInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
