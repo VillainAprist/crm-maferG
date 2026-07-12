@@ -105,12 +105,7 @@ export function PublicSurvey({
     setPantalla('bienvenida')
   }
 
-  // Auto-load demo survey if no token is present (default view)
-  useEffect(() => {
-    if (!urlToken) {
-      window.history.replaceState(null, '', `?token=3fa85f64-5717-4562-b3fc-2c963f66afa6`)
-    }
-  }, [urlToken]);
+
 
 
 
