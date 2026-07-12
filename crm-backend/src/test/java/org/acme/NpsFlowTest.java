@@ -12,9 +12,15 @@ import java.util.Map;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
+import io.agroal.api.AgroalDataSource;
+import jakarta.inject.Inject;
+
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class NpsFlowTest {
+
+    @Inject
+    AgroalDataSource dataSource;
 
     private static String tokenQr;
     private static String lastAlertaId;
@@ -190,5 +196,40 @@ class NpsFlowTest {
             .then()
             .statusCode(404)
             .body("error", notNullValue());
+    }
+
+    @Test
+    @Order(9)
+    void testCleanUpTestData() throws Exception {
+        try (java.sql.Connection conn = dataSource.getConnection();
+             java.sql.Statement stmt = conn.createStatement()) {
+            
+            // 1. Delete child references from alerta_calidad
+            stmt.execute("DELETE FROM alerta_calidad WHERE id_evaluacion IN (" +
+                         "    SELECT id_evaluacion FROM evaluacion_nps WHERE comentario_calidad IN (" +
+                         "        'Excelente tela y atencion', " +
+                         "        'Prenda rota al recibir', " +
+                         "        'Encuesta anonima de prueba'" +
+                         "    )" +
+                         ")");
+            
+            // 2. Delete child references from cupon_fidelizacion
+            stmt.execute("DELETE FROM cupon_fidelizacion WHERE id_evaluacion IN (" +
+                         "    SELECT id_evaluacion FROM evaluacion_nps WHERE comentario_calidad IN (" +
+                         "        'Excelente tela y atencion', " +
+                         "        'Prenda rota al recibir', " +
+                         "        'Encuesta anonima de prueba'" +
+                         "    )" +
+                         ")");
+            
+            // 4. Delete parent rows from evaluacion_nps
+            stmt.execute("DELETE FROM evaluacion_nps WHERE comentario_calidad IN (" +
+                         "    'Excelente tela y atencion', " +
+                         "    'Prenda rota al recibir', " +
+                         "    'Encuesta anonima de prueba'" +
+                         ")");
+            
+            System.out.println("Test data and child constraints cleaned up successfully from the database.");
+        }
     }
 }
