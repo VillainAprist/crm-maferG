@@ -13,6 +13,7 @@ import io.agroal.api.AgroalDataSource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @ApplicationScoped
 public class NpsPublicService {
@@ -25,6 +26,26 @@ public class NpsPublicService {
 
     @Inject
     NpsAdminService npsAdminService;
+
+    @Inject
+    @ConfigProperty(name = "quarkus.mailer.host", defaultValue = "smtp.gmail.com")
+    String smtpHost;
+
+    @Inject
+    @ConfigProperty(name = "quarkus.mailer.port", defaultValue = "587")
+    int smtpPort;
+
+    @Inject
+    @ConfigProperty(name = "quarkus.mailer.username", defaultValue = "")
+    String smtpUser;
+
+    @Inject
+    @ConfigProperty(name = "quarkus.mailer.password", defaultValue = "")
+    String smtpPassword;
+
+    @Inject
+    @ConfigProperty(name = "quarkus.mailer.from", defaultValue = "")
+    String smtpFrom;
 
     @Transactional
     public NpsIngestaResponse registrarEvaluacion(NpsIngestaRequest request) {
@@ -213,6 +234,10 @@ public class NpsPublicService {
                 }
             }
 
+            if (cuponCreado && request.email() != null && !request.email().isBlank()) {
+                enviarCorreoCuponAsincrono(request.email().trim(), request.nombre(), codigoCupon);
+            }
+
             return new NpsIngestaResponse(
                     idCliente,
                     idEvaluacion,
@@ -228,6 +253,55 @@ public class NpsPublicService {
             }
             throw new NpsException("Error en base de datos al procesar la evaluacion: " + ex.getMessage());
         }
+    }
+
+    private void enviarCorreoCuponAsincrono(String destinatario, String nombreCliente, String codigoCupon) {
+        String name = (nombreCliente == null || nombreCliente.trim().isEmpty()) ? "Cliente" : nombreCliente.trim();
+        String htmlContent = "<html>" +
+                "<body style=\"font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4faf8; padding: 20px; color: #1e4a40;\">" +
+                "  <div style=\"max-width: 500px; margin: 0 auto; background-color: #ffffff; padding: 30px; border-radius: 20px; border: 1px solid #cce2db; box-shadow: 0 4px 12px rgba(25,52,44,0.05);\">" +
+                "    <div style=\"text-align: center; margin-bottom: 20px;\">" +
+                "      <h2 style=\"color: #1e4a40; margin: 0; font-size: 22px; text-transform: uppercase; letter-spacing: 1px;\">MAFER-G</h2>" +
+                "      <p style=\"color: #47a993; margin: 5px 0 0; font-size: 11px; font-weight: bold; letter-spacing: 2px;\">COLECCIÓN INFANTIL PREMIUM</p>" +
+                "    </div>" +
+                "    <hr style=\"border: none; border-top: 1px dashed #cce2db; margin: 20px 0;\" />" +
+                "    <p style=\"font-size: 14px; line-height: 1.6; color: #2d5a50;\">¡Hola, <strong>" + name + "</strong>!</p>" +
+                "    <p style=\"font-size: 14px; line-height: 1.6; color: #2d5a50;\">Queremos agradecerte enormemente por tomarte el tiempo de responder nuestra encuesta de calidad. Tu opinión nos ayuda a perfeccionar las prendas que confeccionamos con tanto cariño para los más pequeños.</p>" +
+                "    <p style=\"font-size: 14px; line-height: 1.6; color: #2d5a50;\">Como muestra de nuestro agradecimiento, aquí tienes un cupón del <strong>5% de descuento</strong> exclusivo para tu próxima compra en nuestro taller:</p>" +
+                "    <div style=\"margin: 25px 0; text-align: center;\">" +
+                "      <div style=\"display: inline-block; border: 2px dashed #47a993; background-color: #e8fff8; padding: 15px 30px; border-radius: 12px; font-family: monospace; font-size: 24px; font-weight: bold; color: #1c4a3f; letter-spacing: 3px;\">" +
+                "        " + codigoCupon + "" +
+                "      </div>" +
+                "      <p style=\"font-size: 10px; color: #8faea6; margin-top: 8px;\">Válido por 30 días a partir de la fecha de hoy</p>" +
+                "    </div>" +
+                "    <p style=\"font-size: 13px; line-height: 1.5; color: #53796f;\">Puedes usar este código al hacer tus pedidos de forma directa o presentarlo al comunicarte a nuestro WhatsApp comercial.</p>" +
+                "    <hr style=\"border: none; border-top: 1px dashed #cce2db; margin: 20px 0;\" />" +
+                "    <div style=\"text-align: center; font-size: 10px; color: #8faea6; line-height: 1.4;\">" +
+                "      © " + java.time.Year.now().getValue() + " MAFER-G TEXTIL S.A.C.<br />" +
+                "      Contacto comercial: +51 970 767 654" +
+                "    </div>" +
+                "  </div>" +
+                "</body>" +
+                "</html>";
+
+        new Thread(() -> {
+            try {
+                SimpleSmtpClient.sendEmail(
+                        smtpHost,
+                        smtpPort,
+                        smtpUser,
+                        smtpPassword,
+                        true, // startTls
+                        smtpFrom,
+                        destinatario,
+                        "Regalo de Fidelidad MAFER-G: ¡Tu cupón de descuento!",
+                        htmlContent
+                );
+                System.out.println("Correo de cupon enviado con exito a: " + destinatario);
+            } catch (Exception e) {
+                System.err.println("Error al enviar el correo de cupon a " + destinatario + ": " + e.getMessage());
+            }
+        }).start();
     }
 
     public String obtenerTokenDemo() {
