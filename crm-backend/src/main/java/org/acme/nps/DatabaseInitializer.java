@@ -132,6 +132,10 @@ public class DatabaseInitializer {
                              "  SELECT id_cliente FROM cliente " +
                              "  WHERE email = 'jairopequeñin@gmail.com' OR nombre_razon_social = 'Jairo chiquita bellaca'" +
                              ")");
+                stmt.execute("DELETE FROM venta WHERE id_cliente IN (" +
+                             "  SELECT id_cliente FROM cliente " +
+                             "  WHERE email = 'jairopequeñin@gmail.com' OR nombre_razon_social = 'Jairo chiquita bellaca'" +
+                             ")");
                 stmt.execute("DELETE FROM historial_reconocimiento WHERE id_cliente IN (" +
                              "  SELECT id_cliente FROM cliente " +
                              "  WHERE email = 'jairopequeñin@gmail.com' OR nombre_razon_social = 'Jairo chiquita bellaca'" +
