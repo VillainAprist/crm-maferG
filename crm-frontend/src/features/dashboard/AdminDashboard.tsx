@@ -43,9 +43,10 @@ export function AdminDashboard({ setAdminMode, onNavigateToCatalog }: { setAdmin
   const [ventasLoading, setVentasLoading] = useState(false)
   const [inventarioLoading, setInventarioLoading] = useState(false)
 
+  const pendingAlertsCount = resumenData?.alertasPendientes ?? 0
   const tabs: { key: AdminTab; label: string }[] = userRole === 'admin' ? [
     { key: 'resumen', label: 'Resumen' },
-    { key: 'alertas', label: 'Alertas' },
+    { key: 'alertas', label: `Alertas${pendingAlertsCount > 0 ? ` (${pendingAlertsCount})` : ''}` },
     { key: 'inventario', label: 'Inventario General' },
     { key: 'ventas', label: 'Reporte de Ventas' },
     { key: 'catalogo', label: 'Gestionar Catálogo' },

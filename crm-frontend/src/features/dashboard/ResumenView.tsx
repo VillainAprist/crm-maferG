@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { KpiCard } from '../../components/ui/KpiCard'
 import type { ResumenData, Evaluacion } from '../../types'
 import { EvaluacionesView } from '../evaluaciones'
 
@@ -18,9 +17,8 @@ export function ResumenView({
   evaluacionesLoading: boolean
   fetchEvaluaciones: () => void
 }) {
-  const [subTab, setSubTab] = useState<'opiniones' | 'eventos'>('opiniones')
   const [segmentoFiltro, setSegmentoFiltro] = useState<'TODOS' | 'B2B' | 'B2C'>('TODOS')
-  const [fechaFiltro, setFechaFiltro] = useState<'TODO' | 'HOY' | 'SEMANA' | 'MES'>('TODO')
+  const [fechaFiltro, setFechaFiltro] = useState<'TODO' | 'ESTE_MES' | 'MES_PASADO' | 'ESTE_ANIO'>('TODO')
 
   if (loadingAdmin) {
     return <div className="text-center py-8 text-gray-400">Cargando...</div>
@@ -39,11 +37,6 @@ export function ResumenView({
     )
   }
 
-  const {
-    alertasPendientes,
-    ultimosEventos
-  } = resumenData
-
   // 1. Filtrar las evaluaciones según segmento y rango de fecha
   const evaluacionesFiltradas = evaluaciones.filter((ev) => {
     // Filtrar por Segmento
@@ -56,23 +49,25 @@ export function ResumenView({
 
     const evDate = new Date(ev.fecha + 'T00:00:00')
     const now = new Date()
-    now.setHours(0, 0, 0, 0)
 
-    if (fechaFiltro === 'HOY') {
-      const todayStr = now.toLocaleDateString('sv-SE')
-      return ev.fecha === todayStr
+    const evYear = evDate.getFullYear()
+    const evMonth = evDate.getMonth()
+
+    const nowYear = now.getFullYear()
+    const nowMonth = now.getMonth()
+
+    if (fechaFiltro === 'ESTE_MES') {
+      return evYear === nowYear && evMonth === nowMonth
     }
 
-    if (fechaFiltro === 'SEMANA') {
-      const diffTime = now.getTime() - evDate.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays >= 0 && diffDays <= 7
+    if (fechaFiltro === 'MES_PASADO') {
+      const targetMonth = nowMonth === 0 ? 11 : nowMonth - 1
+      const targetYear = nowMonth === 0 ? nowYear - 1 : nowYear
+      return evYear === targetYear && evMonth === targetMonth
     }
 
-    if (fechaFiltro === 'MES') {
-      const diffTime = now.getTime() - evDate.getTime()
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-      return diffDays >= 0 && diffDays <= 30
+    if (fechaFiltro === 'ESTE_ANIO') {
+      return evYear === nowYear
     }
 
     return true
@@ -90,9 +85,6 @@ export function ResumenView({
     const pctDetVal = (detractores / totalEncuestas) * 100
     npsEstimado = Math.round(pctPromVal - pctDetVal)
   }
-
-  const todayStr = new Date().toLocaleDateString('sv-SE')
-  const respuestasHoy = evaluacionesFiltradas.filter((e) => e.fecha === todayStr).length
 
   const pctProm = totalEncuestas > 0 ? Math.round((promotores / totalEncuestas) * 100) : 0
   const pctDet = totalEncuestas > 0 ? Math.round((detractores / totalEncuestas) * 100) : 0
@@ -139,35 +131,35 @@ export function ResumenView({
           <div className="flex bg-[#f2faf7] p-1 rounded-xl border border-border-light w-full sm:w-auto overflow-x-auto no-scrollbar">
             <button
               onClick={() => setFechaFiltro('TODO')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                 fechaFiltro === 'TODO' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
               Todo
             </button>
             <button
-              onClick={() => setFechaFiltro('HOY')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                fechaFiltro === 'HOY' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
+              onClick={() => setFechaFiltro('ESTE_MES')}
+              className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                fechaFiltro === 'ESTE_MES' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
-              Hoy
+              Este Mes
             </button>
             <button
-              onClick={() => setFechaFiltro('SEMANA')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                fechaFiltro === 'SEMANA' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
+              onClick={() => setFechaFiltro('MES_PASADO')}
+              className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                fechaFiltro === 'MES_PASADO' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
-              7 días
+              Mes Pas.
             </button>
             <button
-              onClick={() => setFechaFiltro('MES')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                fechaFiltro === 'MES' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
+              onClick={() => setFechaFiltro('ESTE_ANIO')}
+              className={`flex-1 sm:flex-none px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                fechaFiltro === 'ESTE_ANIO' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'
               }`}
             >
-              30 días
+              Este Año
             </button>
           </div>
         </div>
@@ -215,76 +207,13 @@ export function ResumenView({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <KpiCard label="Total Encuestas" value={totalEncuestas} />
-        <KpiCard label="Respuestas hoy" value={respuestasHoy} />
-        <KpiCard label="Alertas pendientes" value={alertasPendientes} highlight={alertasPendientes > 0} />
-        <KpiCard label="Promotores" value={promotores} />
-      </div>
-
-      {/* Sub-pestañas locales para Opiniones e Eventos */}
-      <div className="pt-4 border-t border-border-light">
-        <div className="flex gap-1 mb-4 bg-primary-light p-1.5 rounded-xl border border-border-light max-w-sm">
-          <button
-            onClick={() => setSubTab('opiniones')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              subTab === 'opiniones'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-secondary hover:bg-white/50 hover:text-primary'
-            }`}
-          >
-            Opiniones ({evaluaciones.length})
-          </button>
-          <button
-            onClick={() => setSubTab('eventos')}
-            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-              subTab === 'eventos'
-                ? 'bg-primary text-white shadow-sm'
-                : 'text-secondary hover:bg-white/50 hover:text-primary'
-            }`}
-          >
-            Actividad ({ultimosEventos ? ultimosEventos.length : 0})
-          </button>
-        </div>
-
-        <div className="bg-[#fafdfe] border border-[#d8e6e1] rounded-2xl p-4 min-h-[300px]">
-          {subTab === 'opiniones' && (
-            <EvaluacionesView
-              evaluaciones={evaluaciones}
-              loading={evaluacionesLoading}
-              fetchEvaluaciones={fetchEvaluaciones}
-            />
-          )}
-
-          {/* Cupones removidos de la vista estratégica */}
-
-          {subTab === 'eventos' && (
-            <div className="space-y-3 text-left">
-              <div className="mb-2">
-                <h3 className="text-sm font-extrabold text-primary">Historial de Actividad Reciente</h3>
-                <p className="text-[11px] text-secondary">Registro de los últimos eventos del sistema en tiempo real.</p>
-              </div>
-
-              {!ultimosEventos || ultimosEventos.length === 0 ? (
-                <p className="text-sm text-gray-400 italic py-6 text-center bg-[#fbfdfd] border border-dashed border-border-light rounded-xl">
-                  No hay eventos registrados recientemente.
-                </p>
-              ) : (
-                <div className="border border-border-light rounded-2xl bg-white p-4 space-y-3 shadow-inner max-h-[350px] overflow-y-auto">
-                  {ultimosEventos.map((ev, i) => (
-                    <div key={i} className="flex items-start gap-3 text-xs text-[#5c7770] border-b border-gray-50 pb-2.5 last:border-0 last:pb-0">
-                      <span className="font-mono bg-accent-light px-2.5 py-0.5 rounded text-[10px] text-accent-dark font-extrabold shrink-0">{ev.hora}</span>
-                      <div className="min-w-0 flex-1">
-                        <strong className="text-primary font-bold">{ev.titulo}</strong>
-                        {ev.meta && <span className="text-gray-400 block text-[10px] mt-0.5">{ev.meta}</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+      {/* Opiniones y Encuestas directamente */}
+      <div className="pt-4 border-t border-border-light bg-[#fafdfe] border border-[#d8e6e1] rounded-2xl p-4 min-h-[300px]">
+        <EvaluacionesView
+          evaluaciones={evaluacionesFiltradas}
+          loading={evaluacionesLoading}
+          fetchEvaluaciones={fetchEvaluaciones}
+        />
       </div>
     </div>
   )
