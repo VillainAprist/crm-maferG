@@ -55,6 +55,9 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
   ] : userRole === 'operador' ? [
     { key: 'lotes', label: 'Control de Lotes' },
     { key: 'inventario', label: 'Inventario General' }
+  ] : userRole === 'ventas' ? [
+    { key: 'ventas', label: 'Terminal POS' },
+    { key: 'inventario', label: 'Inventario General' }
   ] : []
 
   // Interceptor global de fetch para inyectar token de autorización y manejar expiraciones
@@ -101,7 +104,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
       } else if (savedRole === 'operador') {
         fetchLotes(); fetchProductos(); fetchMaquinas(); fetchUsuarios();
       } else if (savedRole === 'ventas') {
-        fetchLotes(); fetchVentas(); fetchClientes();
+        fetchLotes(); fetchVentas(); fetchClientes(); fetchProductos(); fetchMaquinas(); fetchUsuarios();
       } else if (savedRole === 'soporte') {
         fetchAlertas();
       }
@@ -148,7 +151,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
       } else if (data.role === 'operador') {
         fetchLotes(); fetchProductos(); fetchMaquinas(); fetchUsuarios();
       } else if (data.role === 'ventas') {
-        fetchLotes(); fetchVentas(); fetchClientes();
+        fetchLotes(); fetchVentas(); fetchClientes(); fetchProductos(); fetchMaquinas(); fetchUsuarios();
       } else if (data.role === 'soporte') {
         fetchAlertas();
       }
@@ -477,7 +480,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
         </button>
       </header>
 
-      {(userRole === 'admin' || userRole === 'operador') && (
+      {(userRole === 'admin' || userRole === 'operador' || userRole === 'ventas') && (
         <div className="flex gap-2 mb-4 bg-white p-1.5 rounded-2xl border border-border-primary shadow-sm overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
             <button
@@ -542,7 +545,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
             isAdmin={userRole === 'admin'}
           />
         )}
-        {adminTab === 'inventario' && (userRole === 'admin' || userRole === 'operador') && (
+        {adminTab === 'inventario' && (userRole === 'admin' || userRole === 'operador' || userRole === 'ventas') && (
           <div className="space-y-6 animate-fadeIn text-left">
             <div>
               <h2 className="text-lg font-bold text-[#173c34]">Inventario General de Prendas</h2>
