@@ -326,25 +326,6 @@ export function PublicSurvey({
                 </div>
               )}
 
-              {loteInfo && loteInfo.procesos && loteInfo.procesos.length > 0 && (
-                <div className="border border-border-primary bg-white rounded-2xl p-4 text-left shadow-xs space-y-3 animate-fadeIn">
-                  <h4 className="text-[10px] font-black text-primary uppercase tracking-wider flex items-center gap-1.5">
-                    🧵 Conoce la historia de tu prenda
-                  </h4>
-                  <div className="relative border-l-2 border-accent/25 pl-4 ml-1.5 space-y-3 my-2 text-xs">
-                    {loteInfo.procesos.map((p, idx) => (
-                      <div key={idx} className="relative text-xs">
-                        <span className="absolute -left-[22px] top-1.5 w-2 h-2 rounded-full bg-accent border border-white shadow-xs" />
-                        <span className="font-bold text-primary text-xs">{p.operacion}</span>
-                        <p className="text-[9px] text-secondary font-medium">
-                          Realizado por: <strong className="text-primary">{p.nombreOperador}</strong> {p.fechaRegistro ? `· ${p.fechaRegistro.split(' ')[0]}` : ''}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div className="space-y-2 text-center">
                 <h1 className="text-2xl font-extrabold text-primary leading-tight">
                   ¿Cómo fue tu experiencia?
