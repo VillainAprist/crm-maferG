@@ -544,7 +544,7 @@ export function PublicSurvey({
                         ¡Obtén un Beneficio Especial!
                       </h3>
                       <p className="text-[11px] text-secondary leading-normal mt-0.5">
-                        Si tu puntuación es de **8 a 10 (Promotor)** y registras tus datos, te enviaremos un **cupón de descuento de fidelización** exclusivo al instante.
+                        Al registrar tus datos, te regalamos un **cupón de descuento del 5%** para tu siguiente compra al instante.
                       </p>
                     </div>
                   </div>
