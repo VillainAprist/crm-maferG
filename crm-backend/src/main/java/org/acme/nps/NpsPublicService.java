@@ -28,24 +28,16 @@ public class NpsPublicService {
     NpsAdminService npsAdminService;
 
     @Inject
-    @ConfigProperty(name = "quarkus.mailer.host", defaultValue = "smtp.gmail.com")
-    String smtpHost;
+    @ConfigProperty(name = "app.email.api-key", defaultValue = "")
+    String emailApiKey;
 
     @Inject
-    @ConfigProperty(name = "quarkus.mailer.port", defaultValue = "587")
-    int smtpPort;
+    @ConfigProperty(name = "app.email.sender-name", defaultValue = "MAFER-G")
+    String emailSenderName;
 
     @Inject
-    @ConfigProperty(name = "quarkus.mailer.username", defaultValue = "")
-    String smtpUser;
-
-    @Inject
-    @ConfigProperty(name = "quarkus.mailer.password", defaultValue = "")
-    String smtpPassword;
-
-    @Inject
-    @ConfigProperty(name = "quarkus.mailer.from", defaultValue = "")
-    String smtpFrom;
+    @ConfigProperty(name = "app.email.sender-email", defaultValue = "maferggg12@gmail.com")
+    String emailSenderEmail;
 
     @Transactional
     public NpsIngestaResponse registrarEvaluacion(NpsIngestaRequest request) {
@@ -286,20 +278,17 @@ public class NpsPublicService {
 
         new Thread(() -> {
             try {
-                SimpleSmtpClient.sendEmail(
-                        smtpHost,
-                        smtpPort,
-                        smtpUser,
-                        smtpPassword,
-                        true, // startTls
-                        smtpFrom,
+                EmailHttpSender.sendEmail(
+                        emailApiKey,
+                        emailSenderName,
+                        emailSenderEmail,
                         destinatario,
                         "Regalo de Fidelidad MAFER-G: ¡Tu cupón de descuento!",
                         htmlContent
                 );
-                System.out.println("Correo de cupon enviado con exito a: " + destinatario);
+                System.out.println("Correo de cupon enviado con exito via API HTTP a: " + destinatario);
             } catch (Exception e) {
-                System.err.println("Error al enviar el correo de cupon a " + destinatario + ": " + e.getMessage());
+                System.err.println("Error al enviar el correo de cupon via API HTTP a " + destinatario + ": " + e.getMessage());
             }
         }).start();
     }
