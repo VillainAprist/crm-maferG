@@ -31,7 +31,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
   const [inventario, setInventario] = useState<Inventario[]>([])
   
   // Estados para modal de costos en Inventario General
-  const [selectedLoteParaModal, setSelectedLoteParaModal] = useState<Lote | null>(null)
+  const [selectedProductoParaModal, setSelectedProductoParaModal] = useState<Inventario | null>(null)
   const [filtroTipoPrenda, setFiltroTipoPrenda] = useState('')
   const [selectedCategoria, setSelectedCategoria] = useState('')
 
@@ -649,7 +649,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
                           key={item.idProducto}
                           onClick={() => {
                             if (loteAsociado) {
-                              setSelectedLoteParaModal(loteAsociado)
+                              setSelectedProductoParaModal(item)
                             }
                           }}
                           className={`transition-colors border-b border-[#eef4f2] ${
@@ -684,17 +684,17 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
             )}
           </div>
         )}
-        {selectedLoteParaModal && (
+        {selectedProductoParaModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs animate-fadeIn p-4">
             <div className="bg-white rounded-2xl border border-[#dce7e4] shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden animate-scaleIn">
               {/* Modal Header */}
               <div className="px-6 py-4 bg-[#f2faf7] border-b border-[#dce7e4] flex justify-between items-center flex-shrink-0 text-left">
                 <div>
-                  <h3 className="font-extrabold text-[#173c34] text-sm uppercase tracking-wide">Gestión y Trazabilidad del Lote</h3>
-                  <p className="text-[11px] text-[#4f6f66]">Código: <span className="font-mono font-bold text-primary">{selectedLoteParaModal.codigoLote}</span> | Prenda: <span className="font-bold text-primary">{selectedLoteParaModal.nombrePrenda}</span></p>
+                  <h3 className="font-extrabold text-[#173c34] text-sm uppercase tracking-wide">Gestión y Trazabilidad de Lotes</h3>
+                  <p className="text-[11px] text-[#4f6f66]">Prenda: <span className="font-bold text-primary">{selectedProductoParaModal.nombrePrenda}</span> | SKU: <span className="font-mono font-bold text-primary">{selectedProductoParaModal.sku}</span></p>
                 </div>
                 <button
-                  onClick={() => setSelectedLoteParaModal(null)}
+                  onClick={() => setSelectedProductoParaModal(null)}
                   className="text-gray-400 hover:text-gray-600 font-bold text-lg cursor-pointer"
                 >
                   ✕
@@ -704,7 +704,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
               {/* Modal Body */}
               <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 <LotesView
-                  lotes={[lotes.find(l => l.idLote === selectedLoteParaModal.idLote) || selectedLoteParaModal]}
+                  lotes={lotes.filter(l => l.sku === selectedProductoParaModal.sku)}
                   productos={productos}
                   maquinas={maquinas}
                   usuarios={usuarios}
@@ -718,7 +718,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
               {/* Modal Footer */}
               <div className="px-6 py-4 bg-white border-t border-[#eef4f2] flex justify-end flex-shrink-0">
                 <button
-                  onClick={() => setSelectedLoteParaModal(null)}
+                  onClick={() => setSelectedProductoParaModal(null)}
                   className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-[#2d5a50] text-xs font-bold rounded-full transition-all cursor-pointer"
                 >
                   Cerrar Ventana
