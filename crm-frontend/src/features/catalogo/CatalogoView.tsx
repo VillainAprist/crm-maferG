@@ -447,15 +447,15 @@ export function CatalogoView({
         {/* Footer solicitado con Redes y Teléfono editable */}
         <footer className="border-t border-border-primary pt-8 pb-4 text-center space-y-4 bg-white/80 backdrop-blur-md rounded-2xl p-4 border shadow-xs">
           <div className="flex justify-center gap-6 text-sm font-semibold text-secondary">
-            <a href="https://instagram.com/maferg" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+            <a href="https://www.instagram.com/maferggg12/" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               Instagram
             </a>
             <span>•</span>
-            <a href="https://facebook.com/maferg" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+            <a href="https://www.facebook.com/profile.php?id=61591824843038" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               Facebook
             </a>
             <span>•</span>
-            <a href="https://tiktok.com/@maferg" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+            <a href="https://www.tiktok.com/@maferg.ic" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
               TikTok
             </a>
           </div>

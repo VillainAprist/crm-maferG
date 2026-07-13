@@ -443,7 +443,7 @@ public class NpsAdminService {
 
     public List<LoteDto> obtenerLotes() {
         List<LoteDto> lotes = new ArrayList<>();
-        String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
+        String sql = "SELECT l.id_lote, l.codigo_lote, l.token_qr, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, p.precio as precio_referencia, " +
                      "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
                      "(l.cantidad - COALESCE((SELECT SUM(cantidad_vendida) FROM venta WHERE id_lote = l.id_lote), 0)) as stock, " +
                      "COALESCE((SELECT SUM(costo_total) FROM lote_insumo_consumido WHERE id_lote = l.id_lote), 0) as costo_materiales, " +
@@ -485,7 +485,8 @@ public class NpsAdminService {
                         costoMat,
                         costoMo,
                         costoTot,
-                        costoUnit
+                        costoUnit,
+                        rs.getDouble("precio_referencia")
                 ));
             }
         } catch (Exception e) {
@@ -550,7 +551,7 @@ public class NpsAdminService {
             }
 
             // Devolver Lote creado
-            String sqlSelect = "SELECT l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, " +
+            String sqlSelect = "SELECT l.codigo_lote, l.fecha_confeccion, l.cantidad, p.nombre_prenda, p.sku, p.precio as precio_referencia, " +
                                "l.id_maquina, m.codigo_maquina, m.nombre_maquina, " +
                                "l.cantidad as stock " +
                                "FROM lote_produccion l " +
@@ -584,7 +585,8 @@ public class NpsAdminService {
                                 0.0,
                                 0.0,
                                 0.0,
-                                0.0
+                                0.0,
+                                rs.getDouble("precio_referencia")
                         );
                     } else {
                         throw new NpsException("Lote creado no encontrado.");

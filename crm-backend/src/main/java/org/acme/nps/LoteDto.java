@@ -15,5 +15,6 @@ public record LoteDto(
     double costoMateriales,
     double costoManoObra,
     double costoTotal,
-    double costoUnitario
+    double costoUnitario,
+    double precioReferencia
 ) {}

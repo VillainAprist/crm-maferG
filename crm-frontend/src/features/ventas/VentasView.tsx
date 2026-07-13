@@ -573,8 +573,13 @@ export function VentasView({
 
               {/* Precio negociado */}
               <label className="flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-secondary">
-                  Precio negociado ({unidadVenta === 'DOCENA' ? 'por docena' : 'por unidad'}) — S/.
+                <span className="text-xs font-bold text-secondary flex justify-between items-center">
+                  <span>Precio negociado ({unidadVenta === 'DOCENA' ? 'por docena' : 'por unidad'}) — S/.</span>
+                  {loteSeleccionado && (
+                    <span className="text-[10px] text-accent-dark font-extrabold bg-[#e8fff5] px-2 py-0.5 rounded-md border border-[#cce2db] animate-fadeIn whitespace-nowrap">
+                      Catálogo: {unidadVenta === 'DOCENA' ? `${formatSoles(loteSeleccionado.precioReferencia * 12)}` : `${formatSoles(loteSeleccionado.precioReferencia)}`}
+                    </span>
+                  )}
                 </span>
                 <input
                   type="number"
@@ -586,6 +591,11 @@ export function VentasView({
                   onChange={(e) => setPrecioUnitario(e.target.value !== '' ? Number(e.target.value) : '')}
                   className="border border-border-primary rounded-xl px-3 py-2.5 text-sm text-primary bg-white focus:outline-none focus:ring-1 focus:ring-accent"
                 />
+                {loteSeleccionado && unidadVenta === 'DOCENA' && (
+                  <span className="text-[9px] text-secondary font-medium">
+                    * Precio unitario de catálogo: {formatSoles(loteSeleccionado.precioReferencia)}
+                  </span>
+                )}
               </label>
 
               {/* Cupón */}

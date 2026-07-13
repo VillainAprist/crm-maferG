@@ -138,6 +138,7 @@ export type Lote = {
   costoManoObra: number
   costoTotal: number
   costoUnitario: number
+  precioReferencia: number
 }
 
 export interface LoteInsumoConsumido {
