@@ -33,6 +33,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
   // Estados para modal de costos en Inventario General
   const [selectedLoteParaModal, setSelectedLoteParaModal] = useState<Lote | null>(null)
   const [filtroTipoPrenda, setFiltroTipoPrenda] = useState('')
+  const [selectedCategoria, setSelectedCategoria] = useState('')
 
   const [loadingAdmin, setLoadingAdmin] = useState(false)
   const [alertasLoading, setAlertasLoading] = useState(false)
@@ -51,6 +52,9 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
     { key: 'ventas', label: 'Reporte de Ventas' },
     { key: 'catalogo', label: 'Gestionar Catálogo' },
     { key: 'recursos', label: 'Recursos' },
+  ] : userRole === 'operador' ? [
+    { key: 'lotes', label: 'Control de Lotes' },
+    { key: 'inventario', label: 'Inventario General' }
   ] : []
 
   // Interceptor global de fetch para inyectar token de autorización y manejar expiraciones
@@ -473,7 +477,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
         </button>
       </header>
 
-      {userRole === 'admin' && (
+      {(userRole === 'admin' || userRole === 'operador') && (
         <div className="flex gap-2 mb-4 bg-white p-1.5 rounded-2xl border border-border-primary shadow-sm overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
             <button
@@ -538,7 +542,7 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
             isAdmin={userRole === 'admin'}
           />
         )}
-        {adminTab === 'inventario' && userRole === 'admin' && (
+        {adminTab === 'inventario' && (userRole === 'admin' || userRole === 'operador') && (
           <div className="space-y-6 animate-fadeIn text-left">
             <div>
               <h2 className="text-lg font-bold text-[#173c34]">Inventario General de Prendas</h2>
@@ -547,25 +551,60 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
               </p>
             </div>
 
-            {/* Filtro por tipo de prenda */}
-            <div className="flex gap-4 items-center bg-[#fafdfe] border border-[#dce7e4] p-3 rounded-2xl max-w-md">
-              <span className="text-xs font-extrabold text-[#2d5a50] uppercase shrink-0">🔍 Filtrar:</span>
-              <input
-                type="text"
-                placeholder="Ej: Polo, Casaca, Bebé..."
-                value={filtroTipoPrenda}
-                onChange={(e) => setFiltroTipoPrenda(e.target.value)}
-                className="w-full px-3 py-1.5 border border-[#dce7e4] bg-white rounded-xl text-xs font-semibold focus:outline-none focus:border-[#47a993] text-primary"
-              />
-              {filtroTipoPrenda && (
+            {/* Filtros de Búsqueda y Categoría */}
+            <div className="flex flex-col md:flex-row gap-4 items-start md:items-center bg-[#fafdfe] border border-[#dce7e4] p-4 rounded-2xl">
+              <div className="flex gap-2 items-center w-full md:max-w-xs shrink-0">
+                <span className="text-xs font-extrabold text-[#2d5a50] uppercase shrink-0">🔍 Buscar:</span>
+                <div className="relative w-full">
+                  <input
+                    type="text"
+                    placeholder="Ej: Polo, Casaca, Bebé..."
+                    value={filtroTipoPrenda}
+                    onChange={(e) => setFiltroTipoPrenda(e.target.value)}
+                    className="w-full px-3 py-1.5 pr-8 border border-[#dce7e4] bg-white rounded-xl text-xs font-semibold focus:outline-none focus:border-[#47a993] text-primary"
+                  />
+                  {filtroTipoPrenda && (
+                    <button
+                      type="button"
+                      onClick={() => setFiltroTipoPrenda('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 font-bold px-1"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="h-px w-full md:h-6 md:w-px bg-gray-200 shrink-0" />
+
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-xs font-extrabold text-[#2d5a50] uppercase shrink-0">Prenda:</span>
                 <button
                   type="button"
-                  onClick={() => setFiltroTipoPrenda('')}
-                  className="text-xs text-gray-400 hover:text-gray-600 font-bold px-1"
+                  onClick={() => setSelectedCategoria('')}
+                  className={`px-3 py-1 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                    selectedCategoria === ''
+                      ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10'
+                      : 'bg-white text-[#2d5a50] border-[#dce7e4] hover:bg-primary-light hover:text-primary'
+                  }`}
                 >
-                  ✕
+                  Todos
                 </button>
-              )}
+                {Array.from(new Set(inventario.map(item => item.categoriaInfantil).filter(Boolean))).map((categoria) => (
+                  <button
+                    key={categoria}
+                    type="button"
+                    onClick={() => setSelectedCategoria(categoria)}
+                    className={`px-3 py-1 rounded-full text-xs font-bold transition-all border cursor-pointer ${
+                      selectedCategoria.toLowerCase() === categoria.toLowerCase()
+                        ? 'bg-primary text-white border-primary shadow-sm shadow-primary/10'
+                        : 'bg-white text-[#2d5a50] border-[#dce7e4] hover:bg-primary-light hover:text-primary'
+                    }`}
+                  >
+                    {categoria}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {inventarioLoading ? (
@@ -590,11 +629,14 @@ export function AdminDashboard({ onNavigateToCatalog }: { onNavigateToCatalog: (
                   <tbody className="divide-y divide-[#eef4f2]">
                     {inventario.filter(item => {
                       const search = filtroTipoPrenda.trim().toLowerCase()
-                      return (
+                      const matchesSearch = !search ||
                         item.nombrePrenda.toLowerCase().includes(search) ||
-                        item.sku.toLowerCase().includes(search) ||
-                        (item.categoriaInfantil && item.categoriaInfantil.toLowerCase().includes(search))
-                      )
+                        item.sku.toLowerCase().includes(search)
+                      
+                      const matchesCategory = !selectedCategoria ||
+                        (item.categoriaInfantil && item.categoriaInfantil.toLowerCase() === selectedCategoria.toLowerCase())
+                      
+                      return matchesSearch && matchesCategory
                     }).map((item) => {
                       const lotesDeProducto = lotes.filter(l => l.sku === item.sku)
                       const loteAsociado = lotesDeProducto[0]
