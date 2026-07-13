@@ -260,11 +260,70 @@ export function VentasView({
     } catch { /* sin analisis */ }
   }
 
-  const ventasFiltradas = useMemo(() => ventas.filter((v) =>
-    v.nombreCliente.toLowerCase().includes(filtroVenta.toLowerCase()) ||
-    v.codigoLote.toLowerCase().includes(filtroVenta.toLowerCase()) ||
-    v.nombrePrenda.toLowerCase().includes(filtroVenta.toLowerCase())
-  ), [ventas, filtroVenta])
+  const [paginaActual, setPaginaActual] = useState(1)
+  const itemsPorPagina = 10
+  const [ordenColumna, setOrdenColumna] = useState<'fecha' | 'cliente' | 'prenda' | 'cantidad' | 'precio' | 'total'>('fecha')
+  const [ordenDireccion, setOrdenDireccion] = useState<'asc' | 'desc'>('desc')
+
+  useEffect(() => {
+    setPaginaActual(1)
+  }, [filtroVenta])
+
+  function handleOrdenar(columna: 'fecha' | 'cliente' | 'prenda' | 'cantidad' | 'precio' | 'total') {
+    if (ordenColumna === columna) {
+      setOrdenDireccion(ordenDireccion === 'asc' ? 'desc' : 'asc')
+    } else {
+      setOrdenColumna(columna)
+      setOrdenDireccion('asc')
+    }
+    setPaginaActual(1)
+  }
+
+  const ventasFiltradas = useMemo(() => {
+    let filtered = ventas.filter((v) =>
+      v.nombreCliente.toLowerCase().includes(filtroVenta.toLowerCase()) ||
+      v.codigoLote.toLowerCase().includes(filtroVenta.toLowerCase()) ||
+      v.nombrePrenda.toLowerCase().includes(filtroVenta.toLowerCase())
+    )
+
+    filtered = [...filtered].sort((a, b) => {
+      let valA: any = ''
+      let valB: any = ''
+
+      if (ordenColumna === 'fecha') {
+        valA = a.fechaVenta
+        valB = b.fechaVenta
+      } else if (ordenColumna === 'cliente') {
+        valA = a.nombreCliente.toLowerCase()
+        valB = b.nombreCliente.toLowerCase()
+      } else if (ordenColumna === 'prenda') {
+        valA = a.nombrePrenda.toLowerCase()
+        valB = b.nombrePrenda.toLowerCase()
+      } else if (ordenColumna === 'cantidad') {
+        valA = a.cantidadVendida
+        valB = b.cantidadVendida
+      } else if (ordenColumna === 'precio') {
+        valA = a.precioUnitario
+        valB = b.precioUnitario
+      } else if (ordenColumna === 'total') {
+        valA = a.montoTotal
+        valB = b.montoTotal
+      }
+
+      if (valA < valB) return ordenDireccion === 'asc' ? -1 : 1
+      if (valA > valB) return ordenDireccion === 'asc' ? 1 : -1
+      return 0
+    })
+
+    return filtered
+  }, [ventas, filtroVenta, ordenColumna, ordenDireccion])
+
+  const ventasPaginadas = useMemo(() => {
+    const inicio = (paginaActual - 1) * itemsPorPagina
+    return ventasFiltradas.slice(inicio, inicio + itemsPorPagina)
+  }, [ventasFiltradas, paginaActual])
+
+  const totalPaginas = Math.ceil(ventasFiltradas.length / itemsPorPagina) || 1
 
   const totalHistorial = useMemo(() =>
     ventas.reduce((acc, v) => acc + (v.montoTotal ?? 0), 0), [ventas])
@@ -774,19 +833,31 @@ export function VentasView({
                 <table className="w-full text-sm text-left text-gray-500">
                   <thead className="text-[10px] text-primary uppercase bg-primary-light border-b border-border-primary">
                     <tr>
-                      <th className="px-4 py-3.5 font-bold">Fecha</th>
-                      <th className="px-4 py-3.5 font-bold">Cliente</th>
-                      <th className="px-4 py-3.5 font-bold">Lote / Prenda</th>
-                      <th className="px-4 py-3.5 text-center font-bold">Cantidad</th>
-                      <th className="px-4 py-3.5 text-right font-bold">Precio</th>
+                      <th className="px-4 py-3.5 font-bold cursor-pointer hover:bg-[#dce7e4] select-none transition-colors" onClick={() => handleOrdenar('fecha')}>
+                        Fecha {ordenColumna === 'fecha' ? (ordenDireccion === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th className="px-4 py-3.5 font-bold cursor-pointer hover:bg-[#dce7e4] select-none transition-colors" onClick={() => handleOrdenar('cliente')}>
+                        Cliente {ordenColumna === 'cliente' ? (ordenDireccion === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th className="px-4 py-3.5 font-bold cursor-pointer hover:bg-[#dce7e4] select-none transition-colors" onClick={() => handleOrdenar('prenda')}>
+                        Lote / Prenda {ordenColumna === 'prenda' ? (ordenDireccion === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th className="px-4 py-3.5 text-center font-bold cursor-pointer hover:bg-[#dce7e4] select-none transition-colors" onClick={() => handleOrdenar('cantidad')}>
+                        Cantidad {ordenColumna === 'cantidad' ? (ordenDireccion === 'asc' ? '▲' : '▼') : ''}
+                      </th>
+                      <th className="px-4 py-3.5 text-right font-bold cursor-pointer hover:bg-[#dce7e4] select-none transition-colors" onClick={() => handleOrdenar('precio')}>
+                        Precio {ordenColumna === 'precio' ? (ordenDireccion === 'asc' ? '▲' : '▼') : ''}
+                      </th>
                       {isAdmin && <th className="px-4 py-3.5 text-right font-bold">Costo Confección</th>}
                       {isAdmin && <th className="px-4 py-3.5 text-right font-bold">Utilidad</th>}
-                      <th className="px-4 py-3.5 text-right font-bold">Total</th>
+                      <th className="px-4 py-3.5 text-right font-bold cursor-pointer hover:bg-[#dce7e4] select-none transition-colors" onClick={() => handleOrdenar('total')}>
+                        Total {ordenColumna === 'total' ? (ordenDireccion === 'asc' ? '▲' : '▼') : ''}
+                      </th>
                       <th className="px-4 py-3.5 text-center font-bold">Acc.</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-light text-xs">
-                    {ventasFiltradas.map((v) => {
+                    {ventasPaginadas.map((v) => {
                       const docenas = v.unidadVenta === 'DOCENA' ? Math.floor(v.cantidadVendida / 12) : null
                       const costoUnit = v.costoUnitarioLote || 0
                       const costoTotalVenta = costoUnit * v.cantidadVendida
@@ -841,6 +912,35 @@ export function VentasView({
                     })}
                   </tbody>
                 </table>
+                {/* Controles de paginación */}
+                {totalPaginas > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 bg-[#fafdfe] border-t border-border-primary">
+                    <span className="text-[11px] text-secondary font-semibold">
+                      Mostrando {itemsPorPagina * (paginaActual - 1) + 1} a {Math.min(itemsPorPagina * paginaActual, ventasFiltradas.length)} de {ventasFiltradas.length} ventas
+                    </span>
+                    <div className="flex gap-2 select-none">
+                      <button
+                        type="button"
+                        onClick={() => setPaginaActual(p => Math.max(p - 1, 1))}
+                        disabled={paginaActual === 1}
+                        className="px-3 py-1.5 rounded-lg border border-border-primary text-[10px] font-bold bg-white text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+                      >
+                        ◄ Anterior
+                      </button>
+                      <span className="px-3 py-1.5 text-[10px] text-primary font-extrabold bg-[#e8fff5] border border-[#cce2db] rounded-lg">
+                        Pág. {paginaActual} / {totalPaginas}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setPaginaActual(p => Math.min(p + 1, totalPaginas))}
+                        disabled={paginaActual === totalPaginas}
+                        className="px-3 py-1.5 rounded-lg border border-border-primary text-[10px] font-bold bg-white text-secondary hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all"
+                      >
+                        Siguiente ►
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
