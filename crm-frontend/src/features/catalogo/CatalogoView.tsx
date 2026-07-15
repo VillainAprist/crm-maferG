@@ -445,27 +445,59 @@ export function CatalogoView({
         </section>
 
         {/* Footer solicitado con Redes y Teléfono editable */}
-        <footer className="border-t border-border-primary pt-8 pb-4 text-center space-y-4 bg-white/80 backdrop-blur-md rounded-2xl p-4 border shadow-xs">
-          <div className="flex justify-center gap-6 text-sm font-semibold text-secondary">
-            <a href="https://www.instagram.com/maferggg12/" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-              Instagram
-            </a>
-            <span>•</span>
-            <a href="https://www.facebook.com/profile.php?id=61591824843038" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-              Facebook
-            </a>
-            <span>•</span>
-            <a href="https://www.tiktok.com/@maferg.ic" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
-              TikTok
-            </a>
+        <footer className="border-t border-border-primary pt-8 pb-4 text-center space-y-6 bg-white/80 backdrop-blur-md rounded-2xl p-5 border shadow-xs">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center text-left max-w-4xl mx-auto">
+            {/* Información de Contacto y Redes */}
+            <div className="space-y-4">
+              <h4 className="font-extrabold text-primary text-base">MAFER-G TEXTIL</h4>
+              <p className="text-xs text-secondary leading-relaxed">
+                Visítanos en nuestra tienda física ubicada en Gamarra. Atendemos pedidos mayoristas y envíos a todo el Perú.
+              </p>
+              <div className="flex gap-4 text-xs font-bold text-secondary">
+                <a href="https://www.instagram.com/maferggg12/" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                  Instagram
+                </a>
+                <span>•</span>
+                <a href="https://www.facebook.com/profile.php?id=61591824843038" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                  Facebook
+                </a>
+                <span>•</span>
+                <a href="https://www.tiktok.com/@maferg.ic" target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                  TikTok
+                </a>
+              </div>
+              <div className="text-xs text-secondary/85 space-y-1">
+                <p className="font-extrabold text-secondary">Contacto Comercial / Pedidos:</p>
+                <p className="font-mono text-sm text-primary font-extrabold">+51 970 767 654</p>
+              </div>
+            </div>
+
+            {/* Ubicación Google Maps */}
+            <div className="space-y-2.5">
+              <div className="flex items-center gap-1.5 text-xs text-secondary font-bold">
+                <span>📍</span>
+                <span>Galería Venero, Agustín Gamarra 569, La Victoria</span>
+              </div>
+              <div className="w-full h-40 rounded-xl overflow-hidden border border-border-primary shadow-inner bg-gray-50">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d975.4280316496919!2d-77.0141075303842!3d-12.063317187771245!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9105c89f76861273%3A0x4c3a3788ba0f04fb!2sTIENDA%20276-463%2C%20GALERIA%20VENERO%2C%20Agust%C3%ADn%20Gamarra%20569%2C%20La%20Victoria%2015018!5e0!3m2!1ses!2spe!4v1784098514118!5m2!1ses!2spe"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={true}
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  title="Tienda Mafer-G en Galería Venero - Google Maps"
+                ></iframe>
+              </div>
+            </div>
           </div>
-          <div className="text-xs text-secondary/85 space-y-1">
-            <p className="font-extrabold text-secondary">Contacto Comercial / Pedidos:</p>
-            <p className="font-mono text-sm text-primary font-extrabold">+51 970 767 654</p>
+          
+          <div className="border-t border-border-primary/50 pt-4 text-center">
+            <p className="text-[10px] text-secondary/55 font-bold tracking-wider uppercase">
+              © {new Date().getFullYear()} MAFER-G TEXTIL S.A.C.
+            </p>
           </div>
-          <p className="text-[10px] text-secondary/55 font-bold tracking-wider uppercase">
-            © {new Date().getFullYear()} MAFER-G TEXTIL S.A.C.
-          </p>
         </footer>
 
       </div>
