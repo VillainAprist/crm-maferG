@@ -42,6 +42,7 @@ export function VentasView({
   // Cliente selection States
   const [modoCliente, setModoCliente] = useState<'existente' | 'nuevo'>('existente')
   const [idCliente, setIdCliente] = useState<number | ''>('')
+  const [filtroTextoCliente, setFiltroTextoCliente] = useState('')
 
   // Nuevo Cliente States
   const [clienteNombre, setClienteNombre] = useState('')
@@ -174,6 +175,7 @@ export function VentasView({
       setCantidadInput(1)
       setPrecioUnitario('')
       setIdCliente('')
+      setFiltroTextoCliente('')
       setClienteNombre('')
       setClienteEmail('')
       setClienteTelefono('')
@@ -278,6 +280,16 @@ export function VentasView({
     }
     setPaginaActual(1)
   }
+
+  const clientesFiltrados = useMemo(() => {
+    const query = filtroTextoCliente.toLowerCase().trim()
+    if (!query) return clientes
+    return clientes.filter(c =>
+      c.nombreRazonSocial.toLowerCase().includes(query) ||
+      (c.email && c.email.toLowerCase().includes(query)) ||
+      (c.telefono && c.telefono.includes(query))
+    )
+  }, [clientes, filtroTextoCliente])
 
   const ventasFiltradas = useMemo(() => {
     let filtered = ventas.filter((v) =>
@@ -735,22 +747,31 @@ export function VentasView({
               </div>
 
               {modoCliente === 'existente' ? (
-                <label className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-1.5">
                   <span className="text-xs font-bold text-secondary">Buscar Cliente Registrado</span>
+                  <input
+                    type="text"
+                    placeholder="🔍 Buscar por nombre, correo o teléfono..."
+                    value={filtroTextoCliente}
+                    onChange={(e) => setFiltroTextoCliente(e.target.value)}
+                    className="border border-border-primary rounded-xl px-3 py-2 text-xs text-primary bg-white focus:outline-none focus:ring-1 focus:ring-accent mb-1"
+                  />
                   <select
                     required={modoCliente === 'existente'}
                     value={idCliente}
                     onChange={(e) => setIdCliente(e.target.value !== '' ? Number(e.target.value) : '')}
                     className="border border-border-primary rounded-xl px-3 py-2.5 text-sm text-primary bg-white focus:outline-none focus:ring-1 focus:ring-accent"
                   >
-                    <option value="">Selecciona cliente...</option>
-                    {clientes.map((c) => (
+                    <option value="">
+                      {clientesFiltrados.length === 0 ? 'No se encontraron clientes' : 'Selecciona cliente...'}
+                    </option>
+                    {clientesFiltrados.map((c) => (
                       <option key={c.idCliente} value={c.idCliente}>
-                        [{c.tipoCliente}] {c.nombreRazonSocial} {c.ciudad ? `— ${c.ciudad}` : ''}
+                        [{c.tipoCliente}] {c.nombreRazonSocial} {c.email ? `(${c.email})` : ''} {c.ciudad ? `— ${c.ciudad}` : ''}
                       </option>
                     ))}
                   </select>
-                </label>
+                </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
                   <label className="flex flex-col gap-1.5">

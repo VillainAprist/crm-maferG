@@ -21,6 +21,7 @@ export type Alerta = {
   telefono?: string
   comentario?: string
   idLote: number
+  comentarioResolucion?: string | null
 }
 
 export type Cupon = {

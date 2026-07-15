@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import type { Alerta, LoteProceso, LoteInsumoConsumido } from '../../types'
 import { API_BASE } from '../../config'
 
@@ -17,6 +17,8 @@ export function AlertasView({
   const [resolverComentario, setResolverComentario] = useState('')
   const [resolviendoId, setResolviendoId] = useState<string | null>(null)
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({})
+  const [filtroTextoAlerta, setFiltroTextoAlerta] = useState('')
+  const [tabActivo, setTabActivo] = useState<'PENDIENTE' | 'RESUELTA' | 'TODAS'>('PENDIENTE')
 
   // Traceability states
   const [procesosByLote, setProcesosByLote] = useState<Record<number, LoteProceso[]>>({})
@@ -72,13 +74,33 @@ export function AlertasView({
     return <div className="text-center py-8 text-secondary animate-pulse">Cargando alertas de calidad...</div>
   }
 
-  const sortedAlertas = [...alertas].sort((a, b) => {
-    if (a.estado === 'PENDIENTE' && b.estado !== 'PENDIENTE') return -1
-    if (a.estado !== 'PENDIENTE' && b.estado === 'PENDIENTE') return 1
-    return 0
-  })
-
   const pendientes = alertas.filter((a) => a.estado === 'PENDIENTE').length
+  const resueltas = alertas.filter((a) => a.estado === 'RESUELTA').length
+
+  const alertasFiltradas = useMemo(() => {
+    let list = alertas;
+    
+    // Filtro por Tab
+    if (tabActivo !== 'TODAS') {
+      list = list.filter((a) => a.estado === tabActivo);
+    }
+    
+    // Filtro por Buscador (cliente o lote)
+    const query = filtroTextoAlerta.toLowerCase().trim();
+    if (query) {
+      list = list.filter((a) => 
+        a.cliente.toLowerCase().includes(query) ||
+        a.lote.toLowerCase().includes(query)
+      );
+    }
+    
+    // Ordenar (PENDIENTE primero, luego por ID descendente)
+    return [...list].sort((a, b) => {
+      if (a.estado === 'PENDIENTE' && b.estado !== 'PENDIENTE') return -1;
+      if (a.estado !== 'PENDIENTE' && b.estado === 'PENDIENTE') return 1;
+      return b.id.localeCompare(a.id);
+    });
+  }, [alertas, filtroTextoAlerta, tabActivo])
 
   async function handleResolver() {
     if (!resolverModal) return
@@ -101,7 +123,7 @@ export function AlertasView({
     }
     setAlertas((prev) =>
       prev.map((a) =>
-        a.id === resolverModal ? { ...a, estado: 'RESUELTA' as const } : a,
+        a.id === resolverModal ? { ...a, estado: 'RESUELTA' as const, comentarioResolucion: resolverComentario } : a,
       ),
     )
     setResolverModal(null)
@@ -118,14 +140,66 @@ export function AlertasView({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 text-left">
-        <div className="border border-border-primary rounded-2xl p-4 bg-white shadow-xs">
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Pendientes</p>
-          <strong className="text-3xl font-black text-red-600">{pendientes}</strong>
+      {/* Indicadores rápidos */}
+      <div className="grid grid-cols-3 gap-3 text-left">
+        <div className="border border-border-primary rounded-2xl p-3 bg-white shadow-xs">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Pendientes</p>
+          <strong className="text-2xl font-black text-red-600">{pendientes}</strong>
         </div>
-        <div className="border border-border-primary rounded-2xl p-4 bg-white shadow-xs">
-          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">Total</p>
-          <strong className="text-3xl font-black text-primary">{alertas.length}</strong>
+        <div className="border border-border-primary rounded-2xl p-3 bg-white shadow-xs">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Resueltas</p>
+          <strong className="text-2xl font-black text-accent-dark">{resueltas}</strong>
+        </div>
+        <div className="border border-border-primary rounded-2xl p-3 bg-white shadow-xs">
+          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-0.5">Total</p>
+          <strong className="text-2xl font-black text-primary">{alertas.length}</strong>
+        </div>
+      </div>
+
+      {/* Buscador y Control de Tabs */}
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between pt-1">
+        {/* Input Buscador */}
+        <div className="relative flex-1 text-left">
+          <input
+            type="text"
+            placeholder="🔍 Buscar por cliente o lote..."
+            value={filtroTextoAlerta}
+            onChange={(e) => setFiltroTextoAlerta(e.target.value)}
+            className="w-full border border-border-primary rounded-xl px-3.5 py-2 text-xs text-primary bg-white focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+          {filtroTextoAlerta && (
+            <button
+              onClick={() => setFiltroTextoAlerta('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 hover:text-gray-600 cursor-pointer border-0 bg-transparent"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Tabs de Filtro */}
+        <div className="flex items-center gap-1 bg-primary-light p-1 rounded-xl border border-border-primary shadow-sm self-start md:self-auto">
+          <button
+            type="button"
+            onClick={() => setTabActivo('PENDIENTE')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tabActivo === 'PENDIENTE' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
+          >
+            🔴 Pendientes ({pendientes})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTabActivo('RESUELTA')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tabActivo === 'RESUELTA' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
+          >
+            🟢 Resueltas ({resueltas})
+          </button>
+          <button
+            type="button"
+            onClick={() => setTabActivo('TODAS')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${tabActivo === 'TODAS' ? 'bg-primary text-white shadow-sm' : 'text-secondary hover:text-primary'}`}
+          >
+            📋 Todas ({alertas.length})
+          </button>
         </div>
       </div>
 
@@ -145,8 +219,14 @@ export function AlertasView({
         </div>
       )}
 
+      {alertas.length > 0 && alertasFiltradas.length === 0 && (
+        <div className="text-center py-10 border border-dashed border-border-primary rounded-2xl bg-white/40">
+          <p className="text-xs text-secondary font-bold">No se encontraron alertas que coincidan con la búsqueda o filtro.</p>
+        </div>
+      )}
+
       <div className="grid gap-3">
-        {sortedAlertas.map((item) => {
+        {alertasFiltradas.map((item) => {
           const isExpanded = expandedIds[item.id]
           const isAnonimo = !item.email && !item.telefono
           return (
@@ -226,6 +306,36 @@ export function AlertasView({
                     </div>
                   </div>
 
+                  {/* Acciones de Contacto Rápido */}
+                  {item.estado === 'PENDIENTE' && (item.email || item.telefono) && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {item.telefono && (
+                        <a
+                          href={`https://wa.me/51${item.telefono.trim().replace(/\s+/g, '')}?text=${encodeURIComponent(
+                            `Hola ${item.cliente}, te saludamos de Mafer-G. Nos contactamos contigo porque recibimos tus comentarios sobre el lote ${item.lote} con una puntuación de ${item.puntuacion}/10. Lamentamos la mala experiencia y queremos ayudarte a solucionarlo.`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] transition-all shadow-xs no-underline"
+                        >
+                          💬 Contactar por WhatsApp
+                        </a>
+                      )}
+                      {item.email && (
+                        <a
+                          href={`mailto:${item.email}?subject=${encodeURIComponent(
+                            `Solución de Calidad Mafer-G - Alerta #${item.id}`
+                          )}&body=${encodeURIComponent(
+                            `Hola ${item.cliente},\n\nLe saludamos de Mafer-G. Le escribimos con relación a sus comentarios recibidos sobre el lote ${item.lote}.\n\nLamentamos profundamente su insatisfacción y deseamos brindarle una solución lo antes posible. ¿Podría indicarnos a qué teléfono llamarle o coordinar el cambio de la prenda?\n\nAtentamente,\nAtención al Cliente - Mafer-G`
+                          )}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold text-[10px] transition-all shadow-xs no-underline"
+                        >
+                          ✉️ Enviar Correo Electrónico
+                        </a>
+                      )}
+                    </div>
+                  )}
+
                   <div>
                     <span className="text-gray-400 font-extrabold block text-[9px] uppercase tracking-wider mb-1">Detalle / Comentario de insatisfacción</span>
                     {item.comentario ? (
@@ -236,6 +346,15 @@ export function AlertasView({
                       <div className="text-gray-400 italic font-medium mb-3">El cliente no ingresó comentarios adicionales de calidad.</div>
                     )}
                   </div>
+
+                  {item.estado === 'RESUELTA' && (
+                    <div>
+                      <span className="text-gray-400 font-extrabold block text-[9px] uppercase tracking-wider mb-1">Medida correctiva / Solución aplicada</span>
+                      <div className="bg-[#e8fff5] border-l-2 border-accent pl-3.5 py-2.5 text-primary font-medium text-xs rounded-r-2xl border border-[#cce2db] mb-3">
+                        {item.comentarioResolucion || 'Alerta resuelta sin comentarios registrados.'}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="pt-3 border-t border-dashed border-border-light">
                     <span className="text-gray-400 font-extrabold block text-[9px] uppercase tracking-wider mb-2">Trazabilidad de Confección del Lote</span>
@@ -315,7 +434,36 @@ export function AlertasView({
                 autoFocus
               />
             </label>
-            <div className="flex gap-2">
+
+            {/* Plantillas Rápidas */}
+            <div className="text-left space-y-1.5">
+              <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider block">Plantillas de Solución Rápida</span>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setResolverComentario("Se ofreció disculpas al cliente y se le compensó con un cupón de descuento del 5%.")}
+                  className="px-2 py-1 rounded-lg border border-border-primary bg-primary-light hover:bg-[#e4f3ee] text-[9px] text-primary font-bold cursor-pointer transition-all"
+                >
+                  🏷️ Cupón 5%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResolverComentario("Se coordinó el cambio físico de la prenda defectuosa en tienda.")}
+                  className="px-2 py-1 rounded-lg border border-border-primary bg-primary-light hover:bg-[#e4f3ee] text-[9px] text-primary font-bold cursor-pointer transition-all"
+                >
+                  🔄 Cambio Prenda
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setResolverComentario("Se contactó telefónicamente al cliente y se resolvieron sus dudas de calidad. Caso cerrado.")}
+                  className="px-2 py-1 rounded-lg border border-border-primary bg-primary-light hover:bg-[#e4f3ee] text-[9px] text-primary font-bold cursor-pointer transition-all"
+                >
+                  📞 Llamada Resuelta
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
               <button
                 className="flex-1 py-2.5 rounded-full border border-border-primary text-secondary font-bold text-sm cursor-pointer hover:bg-gray-50 transition-all"
                 onClick={() => { setResolverModal(null); setResolverComentario('') }}

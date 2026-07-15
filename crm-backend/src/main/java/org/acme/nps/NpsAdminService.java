@@ -34,7 +34,8 @@ public class NpsAdminService {
             String email,
             String telefono,
             String comentario,
-            long idLote
+            long idLote,
+            String comentarioResolucion
     ) {}
     public record Cupon(String codigo, String cliente, String estado, String vence) {}
     public record Evento(String hora, String titulo, String meta) {}
@@ -71,7 +72,7 @@ public class NpsAdminService {
 
     public List<Alerta> obtenerAlertas() {
         List<Alerta> alertas = new ArrayList<>();
-        String sql = "SELECT ac.id_alerta, c.nombre_razon_social, lp.codigo_lote, e.puntuacion, c.ciudad, ac.estado, c.email, c.telefono, e.comentario_calidad, lp.id_lote " +
+        String sql = "SELECT ac.id_alerta, c.nombre_razon_social, lp.codigo_lote, e.puntuacion, c.ciudad, ac.estado, c.email, c.telefono, e.comentario_calidad, lp.id_lote, ac.comentario_resolucion " +
                      "FROM alerta_calidad ac " +
                      "JOIN evaluacion_nps e ON ac.id_evaluacion = e.id_evaluacion " +
                      "JOIN cliente c ON e.id_cliente = c.id_cliente " +
@@ -95,7 +96,8 @@ public class NpsAdminService {
                         rs.getString("email"),
                         rs.getString("telefono"),
                         rs.getString("comentario_calidad"),
-                        rs.getLong("id_lote")
+                        rs.getLong("id_lote"),
+                        rs.getString("comentario_resolucion")
                 ));
             }
         } catch (Exception e) {
