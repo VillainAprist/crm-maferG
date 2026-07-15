@@ -202,6 +202,10 @@ export function VentasView({
     const subtotalTicket = venta.precioUnitario * (docenas ?? venta.cantidadVendida)
     const descuentoTicket = subtotalTicket * venta.descuentoPorcentaje / 100
 
+    const totalVenta = venta.montoTotal
+    const subtotalNeto = totalVenta / 1.18
+    const igv18 = totalVenta - subtotalNeto
+
     printWindow.document.write(`
       <html>
         <head>
@@ -242,7 +246,10 @@ export function VentasView({
             <div class="precio-row"><span>Subtotal:</span><span>${formatSoles(subtotalTicket)}</span></div>
             ${venta.descuentoPorcentaje > 0 ? `<div class="precio-row descuento"><span>Descuento (${venta.descuentoPorcentaje}%):</span><span>- ${formatSoles(descuentoTicket)}</span></div>` : ''}
             <div class="divider"></div>
-            <div class="total-row"><span>TOTAL:</span><span>${formatSoles(venta.montoTotal)}</span></div>
+            <div class="precio-row"><span>Valor Neto (sin IGV):</span><span>${formatSoles(subtotalNeto)}</span></div>
+            <div class="precio-row"><span>IGV (18%):</span><span>${formatSoles(igv18)}</span></div>
+            <div class="divider"></div>
+            <div class="total-row"><span>TOTAL PAGADO:</span><span>${formatSoles(venta.montoTotal)}</span></div>
             <div class="divider"></div>
             <img src="${API_BASE}/api/nps/admin/etiqueta/${venta.tokenQr}/qr" alt="QR Encuesta" />
             <p class="instruction">Escanea el QR y comparte tu opinión sobre el producto. ¡Tu voz mejora la calidad MAFER-G!</p>
