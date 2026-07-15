@@ -70,10 +70,6 @@ export function AlertasView({
     }
   }
 
-  if (alertasLoading) {
-    return <div className="text-center py-8 text-secondary animate-pulse">Cargando alertas de calidad...</div>
-  }
-
   const pendientes = alertas.filter((a) => a.estado === 'PENDIENTE').length
   const resueltas = alertas.filter((a) => a.estado === 'RESUELTA').length
 
@@ -101,6 +97,10 @@ export function AlertasView({
       return b.id.localeCompare(a.id);
     });
   }, [alertas, filtroTextoAlerta, tabActivo])
+
+  if (alertasLoading) {
+    return <div className="text-center py-8 text-secondary animate-pulse">Cargando alertas de calidad...</div>
+  }
 
   async function handleResolver() {
     if (!resolverModal) return
